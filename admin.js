@@ -154,6 +154,7 @@ async function load() {
       reloadPending = false;
       try {
         const response = await fetch('/api/requests', { cache: 'no-store' });
+        if (response.status === 401) { location.replace('/admin/login'); return; }
         if (!response.ok) throw new Error('Talepler yüklenemedi.');
         const data = await response.json();
         const previousIds = new Set(requests.map((item) => item.id));
@@ -271,6 +272,7 @@ async function checkRevision() {
   checkingRevision = true;
   try {
     const response = await fetch('/api/revision', { cache: 'no-store' });
+    if (response.status === 401) { location.replace('/admin/login'); return; }
     if (!response.ok) throw new Error('Değişiklik kontrolü başarısız.');
     const {revision} = await response.json();
     if (Number.isSafeInteger(revision) && revision !== knownRevision) {
@@ -309,6 +311,22 @@ sidebarToggle.addEventListener('click', () => setCollapsed(!document.body.classL
 setCollapsed(storage.get('lostra-sidebar-collapsed') === 'true');
 const themeToggle = el('button', 'theme-toggle'); themeToggle.type = 'button';
 $('.top-links').prepend(themeToggle);
+const logoutButton = el('button', 'logout-button'); logoutButton.type = 'button';
+logoutButton.innerHTML = iconSvg('<path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6"/>');
+logoutButton.append(el('span', '', 'Çıkış yap'));
+logoutButton.addEventListener('click', async () => {
+  logoutButton.disabled = true;
+  try {
+    const response = await fetch('/api/admin/logout', { method: 'POST' });
+    if (!response.ok) throw new Error('Çıkış yapılamadı. Tekrar deneyin.');
+    location.replace('/admin/login');
+  } catch (cause) {
+    $('#notice').textContent = cause.message;
+    $('#notice').hidden = false;
+    logoutButton.disabled = false;
+  }
+});
+$('.top-links').append(logoutButton);
 function applyTheme(theme) { document.body.dataset.theme = theme; themeToggle.innerHTML = iconSvg(theme === 'dark' ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/>' : '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>'); themeToggle.append(el('span', '', theme === 'dark' ? 'Aydınlık mod' : 'Karanlık mod')); themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Aydınlık moda geç' : 'Karanlık moda geç'); storage.set('lostra-admin-theme', theme); }
 themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
 applyTheme(storage.get('lostra-admin-theme') === 'dark' ? 'dark' : 'light');

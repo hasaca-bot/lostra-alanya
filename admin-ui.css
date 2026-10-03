@@ -52,3 +52,6 @@ body .settings-card{border-radius:16px}body .setting-field input,body .setting-f
 .image-picker-name{color:var(--muted);font-size:.85rem;overflow-wrap:anywhere}
 .image-picker:has(input:disabled){opacity:.6;cursor:wait}
 body[data-theme=dark] .image-picker-action{color:#151b1e}
+/* Logout remains visible in both sidebar and compact layouts. */
+.logout-button{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);color:var(--ink);padding:9px 12px;border-radius:10px;font-size:.78rem;white-space:nowrap}.logout-button svg{width:17px;height:17px}.logout-button:hover{border-color:var(--orange);color:var(--orange)}@media(max-width:660px){.logout-button span{display:none}.logout-button{padding:9px}}
+.live::before{display:none}

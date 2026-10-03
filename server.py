@@ -25,6 +25,7 @@ from urllib.parse import parse_qs, urlparse
 from functools import wraps
 from request_safety import limiter, ai_slots, stream_slots, upload_slots, same_origin
 from image_safety import validate_image
+import admin_auth
 
 
 ROOT = Path(__file__).resolve().parent
@@ -120,7 +121,7 @@ def safe_diagnostic_route(path):
         return "/api/requests/:id"
     if re.fullmatch(r"/(uploads|site-images)/[^/]+", route):
         return "/images/:file"
-    if route in {"/", "/admin", "/diagnostics", "/api/requests", "/api/revision", "/api/track", "/api/site", "/api/reviews", "/api/analytics", "/api/visit", "/api/events", "/api/chat/customer", "/api/chat/admin", "/api/site-image", "/api/admin/ai-settings", "/api/admin/ai-test", "/api/diagnostics", "/api/diagnostics/live", "/api/diagnostics/events", "/api/diagnostics/client-error"}:
+    if route in {"/", "/health", "/admin", "/admin/login", "/diagnostics", "/api/admin/login", "/api/admin/logout", "/api/requests", "/api/revision", "/api/track", "/api/site", "/api/reviews", "/api/analytics", "/api/visit", "/api/events", "/api/chat/customer", "/api/chat/admin", "/api/site-image", "/api/admin/ai-settings", "/api/admin/ai-test", "/api/diagnostics", "/api/diagnostics/live", "/api/diagnostics/events", "/api/diagnostics/client-error"}:
         return route
     if route.endswith((".js", ".css", ".svg", ".png", ".webp", ".woff2", ".ico")):
         return "/static/:file"
@@ -593,6 +594,14 @@ def guarded(method):
                 limit = 32000
             if length < 0 or length > limit:
                 raise ValueError("İstek boyutu izin verilen sınırı aşıyor.")
+            if admin_auth.is_admin_resource(path, self.command) and not admin_auth.authorized(self.headers):
+                self.close_connection = True
+                if path in ("/admin", "/admin.html"):
+                    self.redirect("/admin/login")
+                else:
+                    self.error_json(503 if not admin_auth.password_configured() else 401,
+                                    "Yönetici şifresi sunucuda ayarlanmamış." if not admin_auth.password_configured() else "Yönetici oturumu gerekli. Lütfen yeniden giriş yapın.")
+                return
             peer = self.client_address[0]
             is_ai = self.command == "POST" and (path.startswith("/api/chat/") or path == "/api/admin/ai-test" or path.endswith("/message-draft"))
             is_stream = path in ("/api/events", "/api/diagnostics/events")
@@ -607,6 +616,8 @@ def guarded(method):
                 policy = ("visit", 60, 60)
             elif path == "/api/diagnostics":
                 policy = ("diagnostics", 30, 60)
+            elif path == "/api/admin/login" and self.command == "POST":
+                policy = ("admin-login", 30, 900)
             if policy and not limiter.allow((peer, policy[0]), policy[1], policy[2]):
                 self.close_connection = True
                 self.error_json(429, "Çok sık işlem yapıldı. Bir dakika sonra tekrar deneyin.")
@@ -692,6 +703,13 @@ class Handler(BaseHTTPRequestHandler):
     def error_json(self, code, message):
         self.send_json(code, {"error": message})
 
+    def redirect(self, destination):
+        self.send_response(303)
+        self.send_header("Location", destination)
+        self.send_header("Content-Length", "0")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
     def read_body(self):
         if self._body_cache is not None:
             return self._body_cache
@@ -722,6 +740,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/health":
+            self.send_json(200, {"ok": True})
+            return
+        if path == "/admin/login":
+            if admin_auth.authorized(self.headers):
+                self.redirect("/admin")
+            else:
+                self.send_bytes(200, (ROOT / "login.html").read_bytes(), "text/html; charset=utf-8")
+            return
         if path == "/api/diagnostics":
             self.send_json(200, diagnostic_snapshot())
             return
@@ -861,6 +888,8 @@ class Handler(BaseHTTPRequestHandler):
             "/diagnostics-client.js": (ROOT / "diagnostics-client.js", "application/javascript; charset=utf-8"),
             "/app.js": (ROOT / "app.js", "application/javascript; charset=utf-8"),
             "/admin.js": (ROOT / "admin.js", "application/javascript; charset=utf-8"),
+            "/login.js": (ROOT / "login.js", "application/javascript; charset=utf-8"),
+            "/login.css": (ROOT / "login.css", "text/css; charset=utf-8"),
             "/chat-ui.js": (ROOT / "chat-ui.js", "application/javascript; charset=utf-8"),
             "/chat-ui.css": (ROOT / "chat-ui.css", "text/css; charset=utf-8"),
             "/tracking-ui.css": (ROOT / "tracking-ui.css", "text/css; charset=utf-8"),
@@ -904,6 +933,21 @@ class Handler(BaseHTTPRequestHandler):
     @guarded
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == "/api/admin/login":
+            if not admin_auth.password_configured():
+                self.error_json(503, "Yönetici şifresi sunucuda ayarlanmamış. Render ortam değişkeni LOSTRA_ADMIN_PASSWORD eklenmelidir.")
+                return
+            data = self.read_json()
+            if set(data) != {"password"} or not admin_auth.check_password(data["password"]):
+                self.error_json(401, "Şifre doğru değil.")
+                return
+            token = admin_auth.create_session()
+            self.send_json(200, {"ok": True}, headers={"Set-Cookie": admin_auth.cookie_header(token)})
+            return
+        if path == "/api/admin/logout":
+            admin_auth.revoke(self.headers)
+            self.send_json(200, {"ok": True}, headers={"Set-Cookie": admin_auth.cookie_header()})
+            return
         if path == "/api/diagnostics/client-error":
             try:
                 if int(self.headers.get("Content-Length", "0")) > 1024:
@@ -1265,8 +1309,8 @@ class DiagnosticsHTTPServer(ThreadingHTTPServer):
 
 if __name__ == "__main__":
     initialize()
-    host = os.environ.get("LOSTRA_HOST", "127.0.0.1")
-    port = int(os.environ.get("LOSTRA_PORT", "8765"))
+    host = os.environ.get("LOSTRA_HOST", "0.0.0.0" if os.environ.get("RENDER") == "true" else "127.0.0.1")
+    port = int(os.environ.get("PORT", os.environ.get("LOSTRA_PORT", "8765")))
     server = DiagnosticsHTTPServer((host, port), Handler)
     server.daemon_threads = True
     print(f"Lostra Alanya hazır: http://{host}:{port}", flush=True)

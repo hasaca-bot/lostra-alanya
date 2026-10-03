@@ -1,5 +1,6 @@
 """Threat and concurrent-update regression tests at the HTTP boundary."""
 import json
+import os
 import shutil
 import tempfile
 import threading
@@ -10,12 +11,15 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import server as app
+import admin_auth
 from request_safety import RateLimiter, same_origin
 
 
 class SecurityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.auth_env = patch.dict(os.environ, {"LOSTRA_ADMIN_PASSWORD": "test-admin-password-2026-only"})
+        cls.auth_env.start()
         cls.original = app.DATA, app.UPLOADS, app.SITE_IMAGES, app.DB
         cls.temp = Path(tempfile.mkdtemp(prefix="lostra-security-tests-", dir=app.ROOT))
         app.DATA, app.UPLOADS, app.SITE_IMAGES, app.DB = (cls.temp, cls.temp / "uploads", cls.temp / "site-images", cls.temp / "lostra.sqlite3")
@@ -24,6 +28,9 @@ class SecurityTests(unittest.TestCase):
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
         cls.url = f"http://127.0.0.1:{cls.server.server_port}"
+        login = Request(cls.url + "/api/admin/login", data=json.dumps({"password": "test-admin-password-2026-only"}).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        with urlopen(login, timeout=5) as response:
+            cls.cookie = response.headers["Set-Cookie"].split(";", 1)[0]
 
     @classmethod
     def tearDownClass(cls):
@@ -31,9 +38,13 @@ class SecurityTests(unittest.TestCase):
         cls.server.server_close()
         app.DATA, app.UPLOADS, app.SITE_IMAGES, app.DB = cls.original
         shutil.rmtree(cls.temp)
+        cls.auth_env.stop()
 
-    def call(self, path, method="GET", data=None, headers=None):
-        request = Request(self.url + path, data=data, headers=headers or {}, method=method)
+    def call(self, path, method="GET", data=None, headers=None, auth=True):
+        headers = dict(headers or {})
+        if auth:
+            headers["Cookie"] = (headers.get("Cookie", "") + "; " if headers.get("Cookie") else "") + self.cookie
+        request = Request(self.url + path, data=data, headers=headers, method=method)
         try:
             with urlopen(request, timeout=5) as result:
                 return result.status, result.headers, result.read()
@@ -66,6 +77,39 @@ class SecurityTests(unittest.TestCase):
         self.assertEqual(headers["Referrer-Policy"], "no-referrer")
         for path in ("/data/lostra.sqlite3", "/.git/config", "/requirements.txt"):
             self.assertEqual(self.call(path)[0], 404)
+
+    def test_admin_login_cookie_logout_and_missing_configuration(self):
+        self.assertEqual(self.call("/api/requests", auth=False)[0], 401)
+        self.assertEqual(self.call("/api/events", auth=False)[0], 401)
+        self.assertEqual(self.call("/api/chat/admin", "POST", b"{}", {"Content-Type": "application/json"}, auth=False)[0], 401)
+        self.assertEqual(self.call("/uploads/" + "a" * 32 + ".png", auth=False)[0], 401)
+        self.assertIn("Yönetici girişi", self.call("/admin", auth=False)[2].decode("utf-8"))
+        self.assertIn("Talep Panosu", self.call("/admin")[2].decode("utf-8"))
+        wrong = json.dumps({"password": "wrong-password-2026"}).encode()
+        self.assertEqual(self.call("/api/admin/login", "POST", wrong, {"Content-Type": "application/json"}, auth=False)[0], 401)
+        valid = json.dumps({"password": "test-admin-password-2026-only"}).encode()
+        status, headers, _ = self.call("/api/admin/login", "POST", valid, {"Content-Type": "application/json"}, auth=False)
+        self.assertEqual(status, 200)
+        self.assertIn("HttpOnly", headers["Set-Cookie"])
+        self.assertIn("SameSite=Lax", headers["Set-Cookie"])
+        fresh_cookie = headers["Set-Cookie"].split(";", 1)[0]
+        self.assertEqual(self.call("/api/admin/logout", "POST", b"", {"Cookie": fresh_cookie}, auth=False)[0], 200)
+        self.assertEqual(self.call("/api/requests", headers={"Cookie": fresh_cookie}, auth=False)[0], 401)
+        with patch.dict(os.environ, {"LOSTRA_ADMIN_PASSWORD": ""}):
+            self.assertEqual(self.call("/api/requests")[0], 503)
+            self.assertEqual(self.call("/api/admin/login", "POST", valid, {"Content-Type": "application/json"}, auth=False)[0], 503)
+
+    def test_session_check_does_not_open_database(self):
+        with patch.object(app, "db_connect", side_effect=AssertionError("Session check must not open DB")):
+            self.assertEqual(self.call("/api/revision")[0], 200)
+
+    def test_health_check_does_not_open_database(self):
+        with patch.object(app, "db_connect", side_effect=AssertionError("Health check must not open DB")):
+            self.assertEqual(self.call("/health", auth=False)[0], 200)
+
+    def test_render_admin_cookie_is_secure(self):
+        with patch.dict(os.environ, {"RENDER": "true"}):
+            self.assertIn("; Secure", admin_auth.cookie_header("a" * 64))
 
     def test_visit_cookie_avoids_second_database_write(self):
         code, headers, body = self.call("/api/visit", "POST", b"1")

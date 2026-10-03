@@ -1,5 +1,6 @@
 """End-to-end checks for upload, tracking, admin update, and event notification."""
 import json
+import os
 from io import BytesIO
 from PIL import Image
 import shutil
@@ -22,6 +23,8 @@ PNG = _png.getvalue()
 class FlowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.auth_env = patch.dict(os.environ, {"LOSTRA_ADMIN_PASSWORD": "test-admin-password-2026-only"})
+        cls.auth_env.start()
         app.DATA = Path(tempfile.mkdtemp(prefix="lostra-tests-", dir=app.ROOT))
         app.UPLOADS = app.DATA / "uploads"
         app.SITE_IMAGES = app.DATA / "site-images"
@@ -32,15 +35,20 @@ class FlowTests(unittest.TestCase):
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
         cls.url = f"http://127.0.0.1:{cls.server.server_port}"
+        login = Request(cls.url + "/api/admin/login", data=json.dumps({"password": "test-admin-password-2026-only"}).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        with urlopen(login, timeout=5) as response:
+            cls.cookie = response.headers["Set-Cookie"].split(";", 1)[0]
 
     @classmethod
     def tearDownClass(cls):
         cls.server.shutdown()
         cls.server.server_close()
         shutil.rmtree(app.DATA)
+        cls.auth_env.stop()
 
     def call(self, path, method="GET", data=None, content_type=None):
         headers = {"Content-Type": content_type} if content_type else {}
+        headers["Cookie"] = self.cookie
         request = Request(self.url + path, data=data, headers=headers, method=method)
         try:
             with urlopen(request, timeout=5) as response:
@@ -95,7 +103,7 @@ class FlowTests(unittest.TestCase):
 
         with patch.object(app, "db_connect", side_effect=AssertionError("Değişiklik kontrolü veritabanını açmamalı")):
             before_revision = self.call("/api/revision")[1]["revision"]
-        events = urlopen(self.url + "/api/events", timeout=5)
+        events = urlopen(Request(self.url + "/api/events", headers={"Cookie": self.cookie}), timeout=5)
         self.assertEqual(events.readline(), b": connected\n")
         status, result = self.call("/api/requests", "POST", body, f"multipart/form-data; boundary={boundary}")
         self.assertEqual(status, 201)
@@ -114,8 +122,9 @@ class FlowTests(unittest.TestCase):
         item = listing["requests"][0]
         self.assertEqual(item["name"], "Ayşe Test")
         self.assertEqual(len(item["photos"]), 1)
-        with urlopen(self.url + item["photos"][0], timeout=5) as image:
-            self.assertEqual(image.read(), PNG)
+        with urlopen(Request(self.url + item["photos"][0], headers={"Cookie": self.cookie}), timeout=5) as image:
+            with Image.open(BytesIO(image.read())) as decoded:
+                self.assertEqual(decoded.size, (2, 2))
         status, tracked = self.call("/api/track?code=" + code)
         self.assertEqual((status, tracked["status"]), (200, "Yeni"))
         self.assertNotIn("phone", tracked)

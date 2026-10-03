@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Yönetici Girişi | Lostra Alanya</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/font.css">
+  <link rel="stylesheet" href="/login.css?v=1">
+  <script defer src="/login.js?v=1"></script>
+</head>
+<body>
+  <header class="login-header">
+    <a class="brand" href="/" aria-label="Lostra Alanya ana sayfa">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <span>LOSTRA ALANYA<small>ATÖLYE YÖNETİMİ</small></span>
+    </a>
+    <a class="home-link" href="/">
+      Ana sayfaya dön
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+    </a>
+  </header>
+  <main class="login-main">
+    <section class="login-card" aria-labelledby="login-title">
+      <div class="card-symbol" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1"/></svg>
+      </div>
+      <h1 id="login-title">Yönetici girişi</h1>
+      <p class="intro">Talep panosunu ve site ayarlarını açmak için yönetici şifresini girin.</p>
+      <form id="login-form" autocomplete="on">
+        <label for="password">Yönetici şifresi</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="current-password" minlength="16" required autofocus>
+          <button id="toggle-password" type="button" aria-label="Şifreyi göster" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p id="login-error" class="login-error" role="alert" hidden></p>
+        <button id="login-button" class="login-button" type="submit">
+          Panele giriş yap
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+        </button>
+      </form>
+      <p class="help">Şifreyi yönetici belirler. Kaybolursa Render ortam değişkenindeki değeri değiştirip hizmeti yeniden başlatabilir.</p>
+    </section>
+  </main>
+</body>
+</html>

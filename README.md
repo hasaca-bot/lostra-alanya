@@ -8,11 +8,13 @@ Python 3.10+ ile bu klasörde:
 
 ```powershell
 python -m pip install -r requirements.txt
+$env:LOSTRA_ADMIN_PASSWORD = Read-Host 'En az 16 karakterlik yönetici şifresi'
 python server.py
 ```
 
 - Müşteri sitesi: http://127.0.0.1:8765/
 - Yönetim paneli: http://127.0.0.1:8765/admin
+- Yönetici girişi: http://127.0.0.1:8765/admin/login
 - Canlı tanılama: http://127.0.0.1:8765/diagnostics
 - Port değiştirmek için: `$env:LOSTRA_PORT='8766'; python server.py`
 
@@ -54,4 +56,4 @@ Sunucu tarayıcının farklı kökenden gelen API isteklerini reddeder; istek bo
 
 ## Yayın öncesi
 
-Yönetim panelinde kullanıcı isteği doğrultusunda henüz şifre yoktur. Panel, yönetici API'leri, yüklenen müşteri görsellerinin adresleri ve müşteri kayıtları internete açık bir tünelde yetkisiz kişilere ulaşabilir. Mevcut sunucu varsayılan olarak yalnızca `127.0.0.1` üzerinde dinler; tünel de erişimi dışarı taşır. Gerçek müşteri verileriyle yayına çıkmadan önce panel ve yönetici sohbeti için yetkilendirme eklenmeli; HTTPS, kalıcı veri depolama ve yedekleme planı belirlenmelidir. Gemini anahtarı yerel SQLite dosyasında saklanır; dosyaya erişimi kısıtlayın, yedekleri koruyun ve daha önce test için paylaşılan anahtarı yayından önce yenileyin. Referans HTML'deki işletme yılı, portföy ve hizmet iddiaları işletme tarafından doğrulanmalıdır. Yalnızca teslim sonrası izin verilen gerçek talep kodları yorum yayınlayabilir.
+Yönetim paneli, yönetici API'leri, yönetici asistanı ve müşteri fotoğrafları oturum gerektirir. Şifre yalnızca `LOSTRA_ADMIN_PASSWORD` ortam değişkeninden okunur; 16 karakterden kısaysa veya boşsa yönetim erişimi kapalı kalır. Oturumlar bellekte tutulur ve 12 saat sonra sona erer; kontrol sırasında veritabanı açılmaz. Render üzerinde HTTPS ile güvenli çerez kullanılır. Yerel sunucu varsayılan olarak yalnızca `127.0.0.1` üzerinde dinler. Gerçek müşteri verileri için kalıcı disk ve yedekleme planı gerekir; adım adım kurulum [RENDER_KURULUM.md](RENDER_KURULUM.md) dosyasındadır. Gemini anahtarı yerel SQLite dosyasında saklanır; dosyaya erişimi kısıtlayın, yedekleri koruyun ve daha önce test için paylaşılan anahtarı yayından önce yenileyin. Referans HTML'deki işletme yılı, portföy ve hizmet iddiaları işletme tarafından doğrulanmalıdır. Yalnızca teslim sonrası izin verilen gerçek talep kodları yorum yayınlayabilir.
