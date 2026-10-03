@@ -1,5 +1,7 @@
 """End-to-end checks for upload, tracking, admin update, and event notification."""
 import json
+from io import BytesIO
+from PIL import Image
 import shutil
 import tempfile
 import threading
@@ -12,7 +14,9 @@ from urllib.request import Request, urlopen
 import server as app
 
 
-PNG = bytes.fromhex("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000b49444154789c636000020000050001a5f645400000000049454e44ae426082")
+_png = BytesIO()
+Image.new('RGB', (2, 2), 'white').save(_png, format='PNG')
+PNG = _png.getvalue()
 
 
 class FlowTests(unittest.TestCase):
@@ -83,7 +87,7 @@ class FlowTests(unittest.TestCase):
     def test_complete_request_flow(self):
         boundary = "lostra-test-boundary"
         parts = []
-        fields = {"name": "Ayşe Test", "phone": "0555 123 45 67", "model": "Nike Air Force 1", "product_type": "Sneaker", "services": "Derin Temizlik", "notes": "Burun kısmı lekeli"}
+        fields = {"name": "Ayşe Test", "phone": "0555 123 45 67", "model": "Nike Air Force 1", "product_type": app.DEFAULT_SITE["product_types"][0], "services": app.DEFAULT_SITE["services"][0], "notes": "Burun kısmı lekeli"}
         for name, value in fields.items():
             parts.append(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n".encode())
         parts.append(f"--{boundary}\r\nContent-Disposition: form-data; name=\"photos\"; filename=\"shoe.png\"\r\nContent-Type: image/png\r\n\r\n".encode() + PNG + b"\r\n")
@@ -122,10 +126,10 @@ class FlowTests(unittest.TestCase):
         status, tracked = self.call("/api/track?code=" + code)
         self.assertEqual(tracked["status"], "Hazırlanıyor")
         for expected in ("Tamamlandı", "Gönderildi", "Teslim Edildi"):
-            status, advanced = self.call(f"/api/requests/{item['id']}/advance", "POST")
+            status, advanced = self.call(f"/api/requests/{item['id']}/advance", "POST", json.dumps({"expected_status": app.STATUSES[app.STATUSES.index(expected)-1]}).encode(), "application/json")
             self.assertEqual((status, advanced["status"]), (200, expected))
             self.assertEqual(self.call("/api/track?code=" + code)[1]["status"], expected)
-        self.assertEqual(self.call(f"/api/requests/{item['id']}/advance", "POST")[0], 409)
+        self.assertEqual(self.call(f"/api/requests/{item['id']}/advance", "POST", json.dumps({"expected_status": "Teslim Edildi"}).encode(), "application/json")[0], 409)
         saved = next(request for request in self.call("/api/requests")[1]["requests"] if request["id"] == item["id"])
         self.assertEqual((saved["model"], saved["admin_note"]), ("Nike Air Force 1", "Taban kontrolü"))
         self.assertEqual(self.call("/api/track?code=LA-AAAA-AAAA")[0], 404)

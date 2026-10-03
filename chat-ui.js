@@ -49,6 +49,10 @@
   const send = document.createElement('button'); send.type = 'submit'; send.setAttribute('aria-label', 'Mesajı gönder'); send.innerHTML = icon('<path d="m3 11 18-8-8 18-2-8-8-2Zm8 2 10-10"/>');
   form.append(input, send); panel.append(head, stream, form); root.append(panel, launcher); document.body.append(root);
   const messages = [];
+  let submitting = false;
+  let previousFocus = null;
+  let modalSiblings = [];
+  panel.id = 'lostra-chat-panel'; launcher.setAttribute('aria-controls', panel.id);
   function bubble(text, sender) { const item = document.createElement('p'); item.className = `chat-message chat-${sender}`; item.textContent = text; if (admin) panel.classList.add('has-messages'); stream.append(item); stream.scrollTop = stream.scrollHeight; return item; }
   let closeTimer;
   function toggle(open) {
@@ -57,6 +61,9 @@
     launcher.setAttribute('aria-label', open ? 'Sohbeti kapat' : admin ? 'Yönetici asistanını aç' : 'Müşteri asistanını aç');
     if (admin) {
       if (open) {
+        previousFocus = document.activeElement;
+        modalSiblings = [...document.body.children].filter(node => node !== root && !node.inert);
+        modalSiblings.forEach(node => { node.inert = true; });
         panel.hidden = false;
         root.classList.add('chat-open');
         document.body.classList.add('admin-chat-open');
@@ -68,7 +75,8 @@
           panel.hidden = true;
           document.body.classList.remove('admin-chat-open');
           root.classList.remove('chat-open');
-          launcher.focus();
+          modalSiblings.forEach(node => { node.inert = false; }); modalSiblings = [];
+          (previousFocus?.isConnected ? previousFocus : launcher).focus();
         }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 340);
       }
     } else {
@@ -81,15 +89,16 @@
     if (panel.hidden) return;
     if (event.key === 'Escape') { event.preventDefault(); toggle(false); }
     if (admin && event.key === 'Tab') {
-      const focusable = [...panel.querySelectorAll('button:not(:disabled), textarea:not(:disabled), summary, a[href]')];
+      const focusable = [...panel.querySelectorAll('button:not(:disabled), textarea:not(:disabled), summary, a[href]')].filter(node => node.getClientRects().length > 0);
       const first = focusable[0], last = focusable.at(-1);
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }
   });
-  input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
+  input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); form.requestSubmit(); } });
   form.addEventListener('submit', async (event) => {
-    event.preventDefault(); const text = input.value.trim(); if (!text) return;
+    event.preventDefault(); const text = input.value.trim(); if (!text || submitting) return;
+    submitting = true; stream.setAttribute('aria-busy', 'true');
     bubble(text, 'user'); messages.push({ role: 'user', text }); input.value = ''; send.disabled = true; input.disabled = true;
     const pending = bubble('Yanıt hazırlanıyor…', 'assistant'); pending.classList.add('chat-pending');
     const letters = [];
@@ -114,11 +123,14 @@
       else if (data.type === 'done') { gotDone = true; if (data.actions?.length) changed = true; }
       else if (data.type === 'error') throw new Error(data.error || 'Yanıt alınamadı.');
     }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
+    let reader;
     try {
-      const response = await fetch(admin ? '/api/chat/admin' : '/api/chat/customer', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' }, body: JSON.stringify({ messages: messages.slice(-11) }) });
+      const response = await fetch(admin ? '/api/chat/admin' : '/api/chat/customer', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' }, signal: controller.signal, body: JSON.stringify({ messages: messages.slice(-11) }) });
       if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Yanıt alınamadı.'); }
       if (!response.body) throw new Error('Sohbet akışı açılamadı.');
-      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+      reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
       while (true) {
         const { value, done } = await reader.read();
         buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
@@ -133,13 +145,13 @@
       if (buffer.trim()) handleEvent(buffer);
       if (!gotDone) throw new Error('Sohbet akışı tamamlanamadı.');
       await drain();
-      if (!fullReply.trim()) { pending.textContent = 'Yanıt alınamadı.'; pending.classList.remove('chat-pending'); }
-      else messages.push({ role: 'model', text: fullReply.slice(0, 5000) });
+      if (!fullReply.trim()) throw new Error('Yanıt alınamadı. Lütfen yeniden deneyin.');
+      messages.push({ role: 'model', text: fullReply.slice(0, 5000) });
       if (admin && changed && typeof load === 'function') load();
     } catch (error) {
       if (ticker) { clearInterval(ticker); ticker = null; }
-      pending.textContent = error.message; pending.classList.remove('chat-pending'); pending.classList.add('chat-error'); messages.pop();
+      pending.textContent = error.name === 'AbortError' ? 'Yanıt zaman aşımına uğradı. Lütfen yeniden deneyin.' : error.message; pending.classList.remove('chat-pending'); pending.classList.add('chat-error'); messages.pop();
       if (admin && changed && typeof load === 'function') load();
-    } finally { send.disabled = false; input.disabled = false; if (launcher.getAttribute('aria-expanded') === 'true') input.focus(); stream.scrollTop = stream.scrollHeight; }
+    } finally { clearTimeout(timeout); if (reader) { try { await reader.cancel(); } catch { /* The stream may already be closed. */ } } submitting = false; stream.setAttribute('aria-busy', 'false'); send.disabled = false; input.disabled = false; if (launcher.getAttribute('aria-expanded') === 'true') input.focus(); stream.scrollTop = stream.scrollHeight; }
   });
 })();

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
 import os
 import queue
 import re
@@ -20,6 +22,9 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+from functools import wraps
+from request_safety import limiter, ai_slots, stream_slots, upload_slots, same_origin
+from image_safety import validate_image
 
 
 ROOT = Path(__file__).resolve().parent
@@ -92,7 +97,9 @@ DEFAULT_SITE = {
 DEFAULT_SITE["gallery"] = [{key: DEFAULT_SITE["content"][f"gallery_{index}_{key}"] for key in ("label", "title", "intro", "image")} for index in range(1, 4)]
 subscribers: set[queue.Queue[tuple[str, int]]] = set()
 subscriber_lock = threading.Lock()
-request_revision = 0
+# A fresh process must not reuse a revision the browser already acknowledged.
+request_revision = int(time.time() * 1000)
+visit_cookie_secret = secrets.token_bytes(32)
 diagnostic_lock = threading.Lock()
 diagnostic_events = deque(maxlen=100)
 diagnostic_subscribers: set[queue.Queue[str]] = set()
@@ -252,6 +259,8 @@ def clean_text(value, limit, required=False):
     if not isinstance(value, str):
         raise ValueError("Form verisi geçersiz.")
     result = value.strip()
+    if any(ord(char) < 32 and char not in "\n\r\t" for char in result):
+        raise ValueError("Metin geçersiz kontrol karakterleri içeriyor.")
     if len(result) > limit or (required and not result):
         raise ValueError("Lütfen zorunlu alanları ve metin uzunluklarını kontrol edin.")
     return result
@@ -268,16 +277,6 @@ def whatsapp_number(value):
     if not 10 <= len(digits) <= 15 or digits.startswith("0"):
         raise ValueError("Telefon numarası WhatsApp için uygun biçimde değil.")
     return digits
-
-
-def image_extension(data):
-    if data.startswith(b"\xff\xd8\xff"):
-        return ".jpg"
-    if data.startswith(b"\x89PNG\r\n\x1a\n"):
-        return ".png"
-    if data.startswith(b"RIFF") and data[8:12] == b"WEBP":
-        return ".webp"
-    return None
 
 
 def public_row(row):
@@ -448,8 +447,12 @@ ADMIN_TOOLS = [
 def admin_tool(name, args):
     if not isinstance(args, dict):
         return {"error": "Araç parametreleri geçersiz."}
+    if name not in ("search_requests", "get_request", "update_request"):
+        return {"error": "İzin verilmeyen araç."}
     connection = db_connect()
     try:
+        if name == "update_request":
+            connection.execute("BEGIN IMMEDIATE")
         if name == "search_requests":
             query = clean_text(args.get("query", ""), 100)
             status = clean_text(args.get("status", ""), 30)
@@ -461,7 +464,8 @@ def admin_tool(name, args):
         if name not in ("get_request", "update_request"):
             return {"error": "İzin verilmeyen araç."}
         identifier = clean_text(args.get("identifier", ""), 30, True)
-        row = connection.execute("SELECT * FROM requests WHERE id=? OR code=?", (int(identifier) if identifier.isdecimal() else -1, identifier.upper())).fetchone()
+        numeric_id = int(identifier) if identifier.isdecimal() and len(identifier) <= 18 else -1
+        row = connection.execute("SELECT * FROM requests WHERE id=? OR code=?", (numeric_id, identifier.upper())).fetchone()
         if row is None:
             return {"error": "Talep bulunamadı."}
         if name == "get_request":
@@ -479,7 +483,7 @@ def admin_tool(name, args):
             if review_allowed and "review_allowed" in args:
                 raise ValueError("Yorum izni yalnızca teslim edilen taleplerde açılabilir.")
             review_allowed = False
-        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        now = datetime.now(timezone.utc).isoformat(timespec="microseconds")
         connection.execute("UPDATE requests SET status=?,model=?,admin_note=?,review_allowed=?,updated_at=? WHERE id=?", (status, model, admin_note, int(review_allowed), now, row["id"]))
         connection.commit()
         publish()
@@ -543,7 +547,7 @@ def chat_stream(kind, api_key, contents, instruction):
             if isinstance(part.get("text"), str) and plain_chat_text(part["text"]):
                 text_seen = True
                 yield {"type": "delta", "text": plain_chat_text(part["text"])}
-            if "functionCall" in part:
+            if kind == "admin" and "functionCall" in part:
                 calls.append(part["functionCall"])
         if not calls:
             if not text_seen:
@@ -563,27 +567,123 @@ def chat_stream(kind, api_key, contents, instruction):
     yield {"type": "done", "actions": actions}
 
 
+def guarded(method):
+    """Reject hostile framing and cross-origin writes before opening SQLite."""
+    @wraps(method)
+    def wrapper(self):
+        self._response_started = False
+        self._body_cache = None
+        acquired = []
+        path = urlparse(self.path).path
+        try:
+            origin = self.headers.get("Origin")
+            if (self.command != "GET" or path.startswith("/api/")) and (
+                (origin and not same_origin(origin, self.headers.get("Host", "")))
+                or self.headers.get("Sec-Fetch-Site") == "cross-site"
+            ):
+                self.close_connection = True
+                self.error_json(403, "Bu adresten işlem yapılmasına izin verilmiyor.")
+                return
+            lengths = self.headers.get_all("Content-Length", [])
+            if self.headers.get("Transfer-Encoding") or len(lengths) > 1:
+                raise ValueError("Geçersiz istek biçimi.")
+            length = int(lengths[0]) if lengths else 0
+            limit = MAX_BODY if path in ("/api/requests", "/api/site-image") and self.command == "POST" else 256000
+            if path.startswith("/api/chat/"):
+                limit = 32000
+            if length < 0 or length > limit:
+                raise ValueError("İstek boyutu izin verilen sınırı aşıyor.")
+            peer = self.client_address[0]
+            is_ai = self.command == "POST" and (path.startswith("/api/chat/") or path == "/api/admin/ai-test" or path.endswith("/message-draft"))
+            is_stream = path in ("/api/events", "/api/diagnostics/events")
+            policy = None
+            if is_ai:
+                policy = ("ai", 20, 60)
+            elif path == "/api/requests" and self.command == "POST":
+                policy = ("upload", 10, 60)
+            elif path in ("/api/track", "/api/reviews"):
+                policy = ("lookup", 90, 60)
+            elif path == "/api/visit" and self.command == "POST":
+                policy = ("visit", 60, 60)
+            elif path == "/api/diagnostics":
+                policy = ("diagnostics", 30, 60)
+            if policy and not limiter.allow((peer, policy[0]), policy[1], policy[2]):
+                self.close_connection = True
+                self.error_json(429, "Çok sık işlem yapıldı. Bir dakika sonra tekrar deneyin.")
+                return
+            if is_ai and not limiter.allow(("global", "ai-hour"), 120, 3600):
+                self.close_connection = True
+                self.error_json(429, "Asistanın saatlik kullanım sınırına ulaşıldı. Daha sonra tekrar deneyin.")
+                return
+            is_upload = self.command == "POST" and path in ("/api/requests", "/api/site-image")
+            for semaphore in ([ai_slots] if is_ai else []) + ([stream_slots] if is_stream else []) + ([upload_slots] if is_upload else []):
+                if not semaphore.acquire(blocking=False):
+                    self.close_connection = True
+                    self.error_json(503, "Sistem şu anda meşgul. Biraz sonra tekrar deneyin.")
+                    return
+                acquired.append(semaphore)
+            if self.command in ("POST", "PATCH") and length:
+                self.read_body()
+            return method(self)
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            self.close_connection = True
+        except (ValueError, UnicodeError, OverflowError):
+            self.close_connection = True
+            if not self._response_started:
+                self.error_json(400, "İstek verisi geçersiz. Alanları ve dosya boyutlarını kontrol edin.")
+        except Exception:
+            self.close_connection = True
+            record_diagnostic("server", safe_diagnostic_route(self.path), 500)
+            if not self._response_started:
+                self.error_json(503, "İşlem şu anda tamamlanamadı. Lütfen tekrar deneyin.")
+        finally:
+            for semaphore in reversed(acquired):
+                semaphore.release()
+    return wrapper
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    server_version = "Lostra"
+    sys_version = ""
+
+    def setup(self):
+        super().setup()
+        self.connection.settimeout(30)
+
+    def send_response(self, code, message=None):
+        self._response_started = True
+        super().send_response(code, message)
+
+    def end_headers(self):
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
+        super().end_headers()
 
     def log_message(self, format, *args):
-        print("[%s] %s" % (self.log_date_time_string(), format % args), flush=True)
+        # Never put tracking codes, image tokens, or arbitrary URL input in logs.
+        print("[%s] %s %s" % (self.log_date_time_string(), self.command, safe_diagnostic_route(self.path)), flush=True)
 
-    def send_bytes(self, code, body, content_type, cache="no-store"):
+    def send_bytes(self, code, body, content_type, cache="no-store", headers=None):
         self.send_response(code)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache)
-        self.send_header("X-Content-Type-Options", "nosniff")
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
         with diagnostic_lock:
             diagnostic_counts["requests"] += 1
         if code >= 400:
             record_diagnostic("http", safe_diagnostic_route(self.path), code)
 
-    def send_json(self, code, value):
-        self.send_bytes(code, json.dumps(value, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+    def send_json(self, code, value, headers=None):
+        self.send_bytes(code, json.dumps(value, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8", headers=headers)
 
     def send_chat_event(self, value):
         self.wfile.write(("data: " + json.dumps(value, ensure_ascii=False) + "\n\n").encode("utf-8"))
@@ -593,14 +693,32 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(code, {"error": message})
 
     def read_body(self):
+        if self._body_cache is not None:
+            return self._body_cache
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
             raise ValueError("Geçersiz dosya boyutu.")
         if not 0 < length <= MAX_BODY:
             raise ValueError("İstek çok büyük veya boş. En fazla 3 fotoğraf yükleyebilirsiniz.")
-        return self.rfile.read(length)
+        body = self.rfile.read(length)
+        if len(body) != length:
+            raise ValueError("İstek gövdesi eksik.")
+        self._body_cache = body
+        return body
 
+    def read_json(self):
+        if self.headers.get_content_type() != "application/json":
+            raise ValueError("JSON biçiminde veri gönderin.")
+        try:
+            value = json.loads(self.read_body())
+        except (ValueError, UnicodeError):
+            raise ValueError("JSON verisi geçersiz.") from None
+        if not isinstance(value, dict):
+            raise ValueError("Form verisi nesne biçiminde olmalıdır.")
+        return value
+
+    @guarded
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
@@ -642,9 +760,9 @@ class Handler(BaseHTTPRequestHandler):
             connection = db_connect()
             try:
                 rows = connection.execute("SELECT * FROM requests ORDER BY id DESC").fetchall()
-                self.send_json(200, {"requests": [public_row(row) for row in rows], "revision": revision})
             finally:
                 connection.close()
+            self.send_json(200, {"requests": [public_row(row) for row in rows], "revision": revision})
             return
         if path == "/api/revision":
             with subscriber_lock:
@@ -655,9 +773,9 @@ class Handler(BaseHTTPRequestHandler):
             connection = db_connect()
             try:
                 row = connection.execute("SELECT config FROM site_settings WHERE id=1").fetchone()
-                self.send_json(200, json.loads(row["config"]))
             finally:
                 connection.close()
+            self.send_json(200, json.loads(row["config"]))
             return
         if path == "/api/admin/ai-settings":
             connection = db_connect()
@@ -691,9 +809,9 @@ class Handler(BaseHTTPRequestHandler):
             connection = db_connect()
             try:
                 rows = connection.execute("SELECT name, anonymous, rating, comment, created_at FROM reviews ORDER BY id DESC LIMIT 30").fetchall()
-                self.send_json(200, {"reviews": [{"name": "İsmini gizleyen müşteri" if row["anonymous"] else row["name"], "rating": row["rating"], "comment": row["comment"], "created_at": row["created_at"]} for row in rows]})
             finally:
                 connection.close()
+            self.send_json(200, {"reviews": [{"name": "İsmini gizleyen müşteri" if row["anonymous"] else row["name"], "rating": row["rating"], "comment": row["comment"], "created_at": row["created_at"]} for row in rows]})
             return
         if path == "/api/analytics":
             days = [(datetime.now(timezone.utc).date() - timedelta(days=offset)).isoformat() for offset in range(13, -1, -1)]
@@ -750,6 +868,7 @@ class Handler(BaseHTTPRequestHandler):
             "/ai-robot.svg": (ROOT / "ai-robot.svg", "image/svg+xml"),
             "/ai-logo.webp": (ROOT / "ai-logo.webp", "image/webp"),
             "/site.css": (ROOT / "site.css", "text/css; charset=utf-8"),
+            "/tailwind.css": (ROOT / "tailwind.css", "text/css; charset=utf-8"),
             "/font.css": (ROOT / "font.css", "text/css; charset=utf-8"),
             "/fonts/google-sans-bold-latin.woff2": (ROOT / "fonts" / "google-sans-bold-latin.woff2", "font/woff2"),
             "/fonts/google-sans-bold-latin-ext.woff2": (ROOT / "fonts" / "google-sans-bold-latin-ext.woff2", "font/woff2"),
@@ -776,13 +895,20 @@ class Handler(BaseHTTPRequestHandler):
                 return
         self.error_json(404, "Sayfa bulunamadı.")
 
+    def do_HEAD(self):
+        if urlparse(self.path).path.startswith("/api/"):
+            self.error_json(405, "Bu adres HEAD isteğini desteklemiyor.")
+            return
+        self.do_GET()
+
+    @guarded
     def do_POST(self):
         path = urlparse(self.path).path
         if path == "/api/diagnostics/client-error":
             try:
                 if int(self.headers.get("Content-Length", "0")) > 1024:
                     raise ValueError("Tanılama verisi çok uzun.")
-                data = json.loads(self.read_body())
+                data = self.read_json()
                 if not isinstance(data, dict) or set(data) != {"page", "kind", "source", "line", "column"}:
                     raise ValueError("Tanılama verisi geçersiz.")
                 if data["page"] not in ("site", "admin", "diagnostics") or data["kind"] not in ("error", "rejection"):
@@ -820,6 +946,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         advance_match = re.fullmatch(r"/api/requests/(\d+)/advance", path)
         if advance_match:
+            data = self.read_json()
+            expected_status = clean_text(data.get("expected_status", ""), 30, True)
+            if expected_status not in STATUSES:
+                raise ValueError("Geçersiz durum.")
             connection = db_connect()
             try:
                 connection.execute("BEGIN IMMEDIATE")
@@ -828,13 +958,17 @@ class Handler(BaseHTTPRequestHandler):
                     connection.rollback()
                     self.error_json(404, "Talep bulunamadı.")
                     return
+                if row["status"] != expected_status:
+                    connection.rollback()
+                    self.error_json(409, "Talep başka bir işlemle değişti. Güncel durumu kontrol edin.")
+                    return
                 current_index = STATUSES.index(row["status"])
                 if current_index == len(STATUSES) - 1:
                     connection.rollback()
                     self.error_json(409, "Talep zaten son aşamada.")
                     return
                 next_status = STATUSES[current_index + 1]
-                now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+                now = datetime.now(timezone.utc).isoformat(timespec="microseconds")
                 connection.execute("UPDATE requests SET status=?, updated_at=? WHERE id=?", (next_status, now, int(advance_match.group(1))))
                 connection.commit()
             finally:
@@ -846,7 +980,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 if int(self.headers.get("Content-Length", "0")) > 32000:
                     raise ValueError("Sohbet isteği çok uzun.")
-                data = json.loads(self.read_body())
+                data = self.read_json()
                 if not isinstance(data, dict):
                     raise ValueError("Sohbet isteği geçersiz.")
                 if path == "/api/admin/ai-test":
@@ -883,25 +1017,32 @@ class Handler(BaseHTTPRequestHandler):
             return
         if urlparse(self.path).path == "/api/visit":
             today = datetime.now(timezone.utc).date().isoformat()
+            marker = hmac.new(visit_cookie_secret, today.encode("ascii"), hashlib.sha256).hexdigest()
+            if re.search(r"(?:^|;\s*)lostra_visit=" + re.escape(today + "." + marker) + r"(?:;|$)", self.headers.get("Cookie", "")):
+                self.send_json(200, {"ok": True, "counted": False})
+                return
             connection = db_connect()
             try:
                 connection.execute("INSERT INTO daily_visits(day,count) VALUES (?,1) ON CONFLICT(day) DO UPDATE SET count=count+1", (today,))
                 connection.commit()
             finally:
                 connection.close()
-            self.send_json(200, {"ok": True})
+            self.send_json(200, {"ok": True, "counted": True}, headers={"Set-Cookie": f"lostra_visit={today}.{marker}; Path=/; HttpOnly; SameSite=Lax"})
             return
         if urlparse(self.path).path == "/api/reviews":
             try:
-                data = json.loads(self.read_body())
+                data = self.read_json()
                 code = clean_text(data.get("code", ""), 20, True).upper()
                 comment = clean_text(data.get("comment", ""), 1000, True)
                 rating = data.get("rating")
-                anonymous = data.get("anonymous") is True
+                anonymous = data.get("anonymous", False)
+                if type(anonymous) is not bool:
+                    raise ValueError("İsim gizleme tercihi geçersiz.")
                 if not re.fullmatch(r"LA-[A-Z2-9]{4}-[A-Z2-9]{4}", code) or type(rating) is not int or not 1 <= rating <= 5:
                     raise ValueError("Takip kodu veya puan geçersiz.")
                 connection = db_connect()
                 try:
+                    connection.execute("BEGIN IMMEDIATE")
                     row = connection.execute("SELECT id,name,status,review_allowed FROM requests WHERE code=?", (code,)).fetchone()
                     if not row or row["status"] != "Teslim Edildi" or not row["review_allowed"]:
                         self.error_json(403, "Bu takip kodu için yorum izni henüz açılmadı.")
@@ -927,10 +1068,8 @@ class Handler(BaseHTTPRequestHandler):
                 images = [part.get_payload(decode=True) for part in message.iter_parts() if part.get_param("name", header="content-disposition") == "image" and part.get_filename()]
                 if len(images) != 1:
                     raise ValueError("Tek bir görsel seçin.")
-                data = images[0]
-                extension = image_extension(data)
-                if not extension or not 0 < len(data) <= MAX_PHOTO_SIZE:
-                    raise ValueError("Görsel JPG, PNG veya WebP olmalı ve 5 MB'ı geçmemeli.")
+                data, extension = validate_image(images[0])
+                extension = "." + extension
                 filename = secrets.token_hex(16) + extension
                 (SITE_IMAGES / filename).write_bytes(data)
                 self.send_json(201, {"url": "/site-images/" + filename})
@@ -963,20 +1102,26 @@ class Handler(BaseHTTPRequestHandler):
                 return clean_text(fields.get(name, [""])[0], limit, required)
             name = field("name", 100, True)
             phone = field("phone", 30, True)
-            if len(re.sub(r"\D", "", phone)) < 10:
+            if not re.fullmatch(r"[+0-9 ()-]+", phone):
                 raise ValueError("Telefon numarasını kontrol edin.")
-            product_type = field("product_type", 60, True)
+            whatsapp_number(phone)
+            product_type = field("product_type", 80, True)
             model = field("model", 100, True)
-            services = [clean_text(value, 60) for value in fields.get("services", [])]
+            services = [clean_text(value, 80, True) for value in fields.get("services", [])]
             notes = field("notes", 2000)
+            connection = db_connect()
+            try:
+                site = json.loads(connection.execute("SELECT config FROM site_settings WHERE id=1").fetchone()["config"])
+            finally:
+                connection.close()
+            if product_type not in site["product_types"] or len(services) > 15 or len(set(services)) != len(services) or any(service not in site["services"] for service in services):
+                raise ValueError("Ürün veya hizmet seçenekleri değişmiş. Sayfayı yenileyip tekrar seçin.")
             if not 1 <= len(images) <= MAX_PHOTOS:
                 raise ValueError("Lütfen 1 ila 3 ayakkabı fotoğrafı seçin.")
             checked = []
             for data in images:
-                extension = image_extension(data)
-                if not extension or not 0 < len(data) <= MAX_PHOTO_SIZE:
-                    raise ValueError("Fotoğraflar JPG, PNG veya WebP olmalı ve 5 MB'ı geçmemeli.")
-                checked.append((data, extension))
+                data, extension = validate_image(data)
+                checked.append((data, "." + extension))
             for data, extension in checked:
                 filename = secrets.token_hex(16) + extension
                 file = UPLOADS / filename
@@ -990,6 +1135,8 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         connection.execute("INSERT INTO requests (code,name,phone,product_type,model,services,notes,photos,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", (code, name, phone, product_type, model, json.dumps(services, ensure_ascii=False), notes, json.dumps(["/uploads/" + file.name for file in saved]), "Yeni", now, now))
                         connection.commit()
+                        # A disconnected client must not delete committed photos.
+                        saved.clear()
                         break
                     except sqlite3.IntegrityError:
                         continue
@@ -1006,13 +1153,13 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             for file in saved:
                 file.unlink(missing_ok=True)
-            self.error_json(500, "Talep kaydedilemedi. Lütfen tekrar deneyin.")
             raise
 
+    @guarded
     def do_PATCH(self):
         if urlparse(self.path).path == "/api/admin/ai-settings":
             try:
-                data = json.loads(self.read_body())
+                data = self.read_json()
                 if not isinstance(data, dict) or set(data) != {"api_key"}:
                     raise ValueError("Anahtar ayarı geçersiz.")
                 api_key = clean_text(data["api_key"], 256)
@@ -1028,7 +1175,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         if urlparse(self.path).path == "/api/site":
             try:
-                data = json.loads(self.read_body())
+                data = self.read_json()
                 connection = db_connect()
                 try:
                     previous = json.loads(connection.execute("SELECT config FROM site_settings WHERE id=1").fetchone()["config"])
@@ -1047,20 +1194,29 @@ class Handler(BaseHTTPRequestHandler):
             self.error_json(404, "Adres bulunamadı.")
             return
         try:
-            data = json.loads(self.read_body())
+            data = self.read_json()
             status = clean_text(data.get("status", ""), 30, True)
             model = clean_text(data.get("model", ""), 100, True)
             admin_note = clean_text(data.get("admin_note", ""), 2000)
             review_allowed = data.get("review_allowed", False)
+            expected_updated_at = data.get("expected_updated_at")
+            if expected_updated_at is not None:
+                expected_updated_at = clean_text(expected_updated_at, 50, True)
             if type(review_allowed) is not bool:
                 raise ValueError("Yorum izni geçersiz.")
             if status not in STATUSES:
                 raise ValueError("Geçersiz durum.")
             if review_allowed and status != "Teslim Edildi":
                 raise ValueError("Yorum izni yalnızca teslim edilen taleplerde açılabilir.")
-            now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            now = datetime.now(timezone.utc).isoformat(timespec="microseconds")
             connection = db_connect()
             try:
+                connection.execute("BEGIN IMMEDIATE")
+                current = connection.execute("SELECT updated_at FROM requests WHERE id=?", (int(match.group(1)),)).fetchone()
+                if current and expected_updated_at is not None and current["updated_at"] != expected_updated_at:
+                    connection.rollback()
+                    self.error_json(409, "Talep başka bir işlemle değişti. Güncel bilgileri açıp tekrar düzenleyin.")
+                    return
                 cursor = connection.execute("UPDATE requests SET status=?, model=?, admin_note=?, review_allowed=?, updated_at=? WHERE id=?", (status, model, admin_note, int(review_allowed), now, int(match.group(1))))
                 connection.commit()
                 found = cursor.rowcount > 0
@@ -1076,6 +1232,32 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class DiagnosticsHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+
+    def __init__(self, *args, **kwargs):
+        self.worker_slots = threading.BoundedSemaphore(64)
+        super().__init__(*args, **kwargs)
+
+    def process_request(self, request, client_address):
+        if not self.worker_slots.acquire(blocking=False):
+            try:
+                request.settimeout(1)
+                request.sendall(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\nRetry-After: 5\r\n\r\n")
+            finally:
+                self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self.worker_slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.worker_slots.release()
+
     def handle_error(self, request, client_address):
         record_diagnostic("server", "/server", 500)
         super().handle_error(request, client_address)

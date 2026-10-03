@@ -9,6 +9,14 @@ let reloadPending = false;
 let knownRevision = null;
 let requestsLoaded = false;
 let activeStatus = null;
+const advancingIds = new Set();
+const draftingIds = new Set();
+let detailSnapshot = null;
+let detailSaving = false;
+let detailReturnFocus = null;
+const storage = { get(key) { try { return localStorage.getItem(key); } catch { return null; } }, set(key, value) { try { localStorage.setItem(key, value); } catch { /* Preferences are optional. */ } } };
+function detailValues() { const form = $('#detail form'); return form ? JSON.stringify([...form.elements].filter(node => node.matches('input,select,textarea')).map(node => node.type === 'checkbox' ? node.checked : node.value)) : null; }
+function detailDirty() { return detailSnapshot !== null && detailValues() !== detailSnapshot; }
 $('#today').textContent = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'full' }).format(new Date());
 $('#live-status').setAttribute('role', 'status');
 
@@ -47,7 +55,7 @@ function render() {
       const nextStatus = statuses[statuses.indexOf(item.status) + 1];
       if (nextStatus) {
         const advance = el('button', 'request-next');
-        advance.type = 'button';
+        advance.type = 'button'; advance.disabled = advancingIds.has(item.id);
         advance.setAttribute('aria-label', `${item.code}: ${nextStatus} aşamasına al`);
         advance.append(el('span', '', `${nextStatus} aşamasına al`));
         const arrow = el('span', 'request-next-icon');
@@ -74,9 +82,13 @@ function render() {
 }
 
 async function advanceRequest(id, button) {
+  if (advancingIds.has(id)) return;
+  const current = requests.find(item => item.id === id);
+  if (!current) return;
+  advancingIds.add(id);
   button.disabled = true;
   try {
-    const response = await fetch(`/api/requests/${id}/advance`, { method: 'POST' });
+    const response = await fetch(`/api/requests/${id}/advance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expected_status: current.status }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Talep ilerletilemedi.');
     const item = requests.find((request) => request.id === id);
@@ -88,11 +100,14 @@ async function advanceRequest(id, button) {
     $('#notice').textContent = error.message;
     $('#notice').hidden = false;
   } finally {
-    button.disabled = false;
+    advancingIds.delete(id);
+    render();
   }
 }
 
 async function openCompletionDraft(id, button, feedback = null) {
+  if (draftingIds.has(id)) return;
+  draftingIds.add(id);
   const draftTab = window.open('about:blank', '_blank');
   if (draftTab) {
     draftTab.opener = null;
@@ -115,8 +130,8 @@ async function openCompletionDraft(id, button, feedback = null) {
       target.replaceChildren(link);
       target.hidden = false;
     }
-    if (feedback && draftTab) feedback.textContent = result.source === 'gemini' ? 'Gemini taslağı WhatsApp’ta açıldı. Göndermeden önce metni kontrol edin.' : 'Hazır taslak WhatsApp’ta açıldı. Göndermeden önce metni kontrol edin.';
-    if (!feedback && result.source !== 'gemini') {
+    if (feedback && draftTab && !draftTab.closed) feedback.textContent = result.source === 'gemini' ? 'Gemini taslağı WhatsApp’ta açıldı. Göndermeden önce metni kontrol edin.' : 'Hazır taslak WhatsApp’ta açıldı. Göndermeden önce metni kontrol edin.';
+    if (!feedback && result.source !== 'gemini' && draftTab && !draftTab.closed) {
       $('#notice').textContent = 'Gemini kullanılamadı; hazır mesaj taslağı açıldı.';
       $('#notice').hidden = false;
     }
@@ -126,6 +141,7 @@ async function openCompletionDraft(id, button, feedback = null) {
     target.textContent = error.message;
     target.hidden = false;
   } finally {
+    draftingIds.delete(id);
     button.disabled = false;
   }
 }
@@ -157,6 +173,8 @@ async function load() {
 }
 
 function showDetail(id) {
+  if (selectedId !== null && !closeDetail()) return;
+  detailReturnFocus = document.activeElement;
   selectedId = id;
   const item = requests.find((request) => request.id === id);
   if (!item) return;
@@ -193,14 +211,14 @@ function showDetail(id) {
   const message = el('p', 'save-message'); message.setAttribute('role', 'alert');
   form.append(modelLabel, model, statusLabel, status, noteLabel, note, reviewLabel, reviewHint, save, message);
   form.addEventListener('submit', async (event) => {
-    event.preventDefault(); save.disabled = true; save.textContent = 'Kaydediliyor…'; message.textContent = '';
+    event.preventDefault(); if (detailSaving) return; detailSaving = true; save.disabled = true; save.textContent = 'Kaydediliyor…'; message.textContent = '';
     try {
-      const response = await fetch(`/api/requests/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: model.value, status: status.value, admin_note: note.value, review_allowed: reviewCheckbox.checked }) });
+      const response = await fetch(`/api/requests/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: model.value, status: status.value, admin_note: note.value, review_allowed: reviewCheckbox.checked, expected_updated_at: item.updated_at }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Kaydedilemedi.');
-      closeDetail(); await load();
+      detailSnapshot = null; detailSaving = false; closeDetail(); await load();
     } catch (error) { message.textContent = error.message; }
-    finally { save.disabled = false; save.textContent = 'Değişiklikleri kaydet'; }
+    finally { detailSaving = false; save.disabled = false; save.textContent = 'Değişiklikleri kaydet'; }
   });
   detail.append(head, photos, info, notes, form);
   if (statuses.indexOf(item.status) >= statuses.indexOf('Tamamlandı')) {
@@ -214,20 +232,34 @@ function showDetail(id) {
     contactSection.append(contact, feedback);
     detail.append(contactSection);
   }
+  detailSnapshot = detailValues();
   $('#overlay').hidden = false;
   document.body.style.overflow = 'hidden';
   close.focus();
 }
-function closeDetail() { $('#overlay').hidden = true; document.body.style.overflow = ''; selectedId = null; }
+function closeDetail() {
+  if (detailSaving) return false;
+  if (detailDirty() && !window.confirm('Kaydedilmemiş değişiklikler var. Değişiklikleri bırakıp kapatmak istiyor musunuz?')) return false;
+  $('#overlay').hidden = true; document.body.style.overflow = ''; selectedId = null; detailSnapshot = null;
+  if (detailReturnFocus?.isConnected) detailReturnFocus.focus(); else $('#search').focus();
+  return true;
+}
 $('#overlay').addEventListener('click', (event) => { if (event.target.id === 'overlay') closeDetail(); });
-document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('#overlay').hidden) closeDetail(); });
+document.addEventListener('keydown', (event) => {
+  if ($('#overlay').hidden || document.body.classList.contains('admin-chat-open')) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeDetail(); }
+  if (event.key === 'Tab') {
+    const nodes = [...$('#detail').querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]')].filter(node => node.getClientRects().length);
+    const first = nodes[0], last = nodes.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  }
+});
 $('#search').addEventListener('input', render);
 $('#refresh').addEventListener('click', load);
 load();
 const events = new EventSource('/api/events');
 events.addEventListener('change', (event) => {
-  const revision = Number(event.data);
-  if (Number.isSafeInteger(revision)) knownRevision = revision;
   load();
 });
 events.addEventListener('review', () => { if (typeof reviewsView !== 'undefined' && !reviewsView.hidden) loadAdminReviews(); });
@@ -242,7 +274,6 @@ async function checkRevision() {
     if (!response.ok) throw new Error('Değişiklik kontrolü başarısız.');
     const {revision} = await response.json();
     if (Number.isSafeInteger(revision) && revision !== knownRevision) {
-      knownRevision = revision;
       await load();
     }
   } catch { /* EventSource yeniden bağlanırken sonraki kontrol tekrar dener. */ }
@@ -273,14 +304,14 @@ const sidebarBackdrop = el('button', 'sidebar-backdrop'); sidebarBackdrop.type =
 function closeMobileSidebar() { document.body.classList.remove('sidebar-mobile-open'); mobileToggle.setAttribute('aria-expanded', 'false'); }
 mobileToggle.addEventListener('click', () => { document.body.classList.toggle('sidebar-mobile-open'); mobileToggle.setAttribute('aria-expanded', String(document.body.classList.contains('sidebar-mobile-open'))); });
 sidebarBackdrop.addEventListener('click', closeMobileSidebar);
-function setCollapsed(collapsed) { document.body.classList.toggle('sidebar-collapsed', collapsed); sidebarToggle.setAttribute('aria-label', collapsed ? 'Menüyü genişlet' : 'Menüyü daralt'); sidebarToggle.innerHTML = iconSvg(collapsed ? '<path d="m10 6 6 6-6 6"/>' : '<path d="m14 6-6 6 6 6"/>'); localStorage.setItem('lostra-sidebar-collapsed', String(collapsed)); }
+function setCollapsed(collapsed) { document.body.classList.toggle('sidebar-collapsed', collapsed); sidebarToggle.setAttribute('aria-label', collapsed ? 'Menüyü genişlet' : 'Menüyü daralt'); sidebarToggle.innerHTML = iconSvg(collapsed ? '<path d="m10 6 6 6-6 6"/>' : '<path d="m14 6-6 6 6 6"/>'); storage.set('lostra-sidebar-collapsed', String(collapsed)); }
 sidebarToggle.addEventListener('click', () => setCollapsed(!document.body.classList.contains('sidebar-collapsed')));
-setCollapsed(localStorage.getItem('lostra-sidebar-collapsed') === 'true');
+setCollapsed(storage.get('lostra-sidebar-collapsed') === 'true');
 const themeToggle = el('button', 'theme-toggle'); themeToggle.type = 'button';
 $('.top-links').prepend(themeToggle);
-function applyTheme(theme) { document.body.dataset.theme = theme; themeToggle.innerHTML = iconSvg(theme === 'dark' ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/>' : '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>'); themeToggle.append(el('span', '', theme === 'dark' ? 'Aydınlık mod' : 'Karanlık mod')); themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Aydınlık moda geç' : 'Karanlık moda geç'); localStorage.setItem('lostra-admin-theme', theme); }
+function applyTheme(theme) { document.body.dataset.theme = theme; themeToggle.innerHTML = iconSvg(theme === 'dark' ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/>' : '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>'); themeToggle.append(el('span', '', theme === 'dark' ? 'Aydınlık mod' : 'Karanlık mod')); themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Aydınlık moda geç' : 'Karanlık moda geç'); storage.set('lostra-admin-theme', theme); }
 themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
-applyTheme(localStorage.getItem('lostra-admin-theme') === 'dark' ? 'dark' : 'light');
+applyTheme(storage.get('lostra-admin-theme') === 'dark' ? 'dark' : 'light');
 const topSiteLink = $('.top-links a'); topSiteLink.textContent = 'Müşteri sitesi'; topSiteLink.insertAdjacentHTML('beforeend', iconSvg('<path d="M13 5h6v6m0-6-9 9"/><path d="M19 13v6H5V5h6"/>'));
 const sideLinks = [];
 function sideButton(label, path, view, status = null) {
@@ -515,7 +546,9 @@ async function saveSettings(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const save = form.querySelector('.settings-save');
+  if (save.disabled) return;
   const message = $('#settings-message');
+  if (form.querySelector('input[type=file]:disabled')) { message.textContent = 'Görsellerin yüklenmesini bekleyin.'; return; }
   const content = { ...siteConfig.content };
   form.querySelectorAll('[data-key]').forEach((input) => { content[input.dataset.key] = input.value.trim(); });
   const choices = (key) => [...form.querySelectorAll(`#settings-${key} input`)].map((input) => input.value.trim());
@@ -534,5 +567,7 @@ async function saveSettings(event) {
 if (location.hash === '#site-settings') switchView('site');
 else if (location.hash === '#analytics') switchView('analytics');
 else if (location.hash === '#reviews') switchView('reviews');
-else if (location.hash.startsWith('#status-')) { activeStatus = decodeURIComponent(location.hash.slice(8)); if (!statuses.includes(activeStatus)) activeStatus = null; switchView('board'); render(); }
+else if (location.hash.startsWith('#status-')) { try { activeStatus = decodeURIComponent(location.hash.slice(8)); } catch { activeStatus = null; } if (!statuses.includes(activeStatus)) activeStatus = null; switchView('board'); render(); }
 else switchView('board');
+
+window.addEventListener('beforeunload', event => { if (detailDirty() || detailSaving) { event.preventDefault(); event.returnValue = ''; } });

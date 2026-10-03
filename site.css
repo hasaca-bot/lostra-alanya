@@ -9,6 +9,7 @@ html{scroll-padding-top:88px}body{overflow-x:hidden}button,input,textarea,select
 .hero-kicker{margin:0 0 22px;color:#f2c6a8;font-size:.83rem;font-weight:700;letter-spacing:.04em}
 .step-number{font-size:.9rem;font-weight:800;color:var(--accent);letter-spacing:.04em}
 .upload-illustration{display:block;width:52px;height:52px;margin:0 auto 12px;color:var(--accent);transition:transform .25s ease,filter .25s ease}#photo-dropzone:hover .upload-illustration,#photo-dropzone:focus-within .upload-illustration{transform:translateY(-3px);filter:drop-shadow(0 4px 5px #a23b0028)}#photo-dropzone:focus-within{outline:3px solid var(--accent);outline-offset:3px}
+#photo-dropzone.is-dragging{border-color:var(--accent);background:#f9ece3}
 .gallery-label{margin:0 0 12px;color:var(--accent);font-size:.8rem;font-weight:700;letter-spacing:.02em}
 .comparison-caption{color:#fff;font-size:.78rem;font-weight:700;text-shadow:0 2px 8px #000,0 1px 3px #000}
 .status-text{display:block;width:fit-content;padding:0;border:0;border-radius:0;background:none;color:var(--accent);font-size:.95rem;font-weight:800}

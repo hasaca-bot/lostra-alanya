@@ -1,0 +1,14 @@
+{
+  "name": "lostra-alanya",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local CSS build tools for Lostra Alanya",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.cjs -i tailwind-input.css -o tailwind.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "0.1.1",
+    "@tailwindcss/forms": "0.5.10",
+    "tailwindcss": "3.4.17"
+  }
+}

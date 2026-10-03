@@ -3,7 +3,7 @@ try {
   const visitKey = `lostra-visit-${new Date().toISOString().slice(0, 10)}`;
   if (!sessionStorage.getItem(visitKey)) {
     sessionStorage.setItem(visitKey, '1');
-    fetch('/api/visit', { method: 'POST' }).catch(() => sessionStorage.removeItem(visitKey));
+    fetch('/api/visit', { method: 'POST' }).then(response => { if (!response.ok) throw new Error(); }).catch(() => { try { sessionStorage.removeItem(visitKey); } catch { /* Storage may be disabled. */ } });
   }
 } catch { /* The site remains usable if storage is disabled. */ }
 const galleryGrid = $('#calismalarimiz .grid.grid-cols-1');
@@ -113,9 +113,11 @@ if (slider) {
   });
   window.addEventListener('resize', syncImageWidth);
   syncImageWidth();
-  slider.addEventListener('pointerdown', (event) => { slider.setPointerCapture(event.pointerId); setPosition((event.clientX - slider.getBoundingClientRect().left) / slider.clientWidth * 100); });
+  slider.addEventListener('pointerdown', (event) => { if (!event.isPrimary || event.button !== 0) return; slider.setPointerCapture(event.pointerId); setPosition((event.clientX - slider.getBoundingClientRect().left) / slider.clientWidth * 100); });
   slider.addEventListener('pointermove', (event) => { if (slider.hasPointerCapture(event.pointerId)) setPosition((event.clientX - slider.getBoundingClientRect().left) / slider.clientWidth * 100); });
+  slider.addEventListener('pointerup', event => { if (slider.hasPointerCapture(event.pointerId)) slider.releasePointerCapture(event.pointerId); });
   slider.addEventListener('keydown', (event) => {
+    if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); setPosition(event.key === 'Home' ? 5 : 95); }
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); setPosition(percentage + (event.key === 'ArrowRight' ? 5 : -5)); }
   });
   setPosition(50);
@@ -128,7 +130,7 @@ menu?.addEventListener('click', () => {
   menu.setAttribute('aria-expanded', String(!nav.hidden));
   menu.setAttribute('aria-label', nav.hidden ? 'Menüyü aç' : 'Menüyü kapat');
 });
-$('#mobile-nav')?.addEventListener('click', (event) => { if (event.target.closest('a')) { $('#mobile-nav').hidden = true; menu.setAttribute('aria-expanded', 'false'); } });
+$('#mobile-nav')?.addEventListener('click', (event) => { if (event.target.closest('a')) { $('#mobile-nav').hidden = true; menu.setAttribute('aria-expanded', 'false'); menu.setAttribute('aria-label', 'Menüyü aç'); } });
 
 const sectionLinks = [...document.querySelectorAll('header a[href^="#"], #mobile-nav a[href^="#"]')];
 const navSections = [...new Set(sectionLinks.map((link) => link.hash.slice(1)))]
@@ -169,23 +171,53 @@ scheduleActiveSection();
 
 const photoInput = $('#photos');
 const photoFeedback = $('#photo-feedback');
+let photoUrls = [];
+function clearPhotoPreview() { photoUrls.forEach(url => URL.revokeObjectURL(url)); photoUrls = []; $('#photo-preview').replaceChildren(); }
 photoInput?.addEventListener('change', () => {
   const files = [...photoInput.files];
   const preview = $('#photo-preview');
-  preview.replaceChildren();
+  clearPhotoPreview();
   photoFeedback.textContent = files.length ? `${files.length} fotoğraf seçildi.` : '1 ila 3 JPG, PNG veya WebP fotoğrafı; her biri en fazla 5 MB.';
   files.slice(0, 3).forEach((file) => {
     const image = document.createElement('img');
     image.alt = file.name;
-    image.src = URL.createObjectURL(file);
-    image.onload = () => URL.revokeObjectURL(image.src);
+    const url = URL.createObjectURL(file); photoUrls.push(url); image.src = url;
+    image.onload = image.onerror = () => URL.revokeObjectURL(url);
     preview.append(image);
   });
 });
+const photoDropzone = $('#photo-dropzone');
+if (photoInput && photoDropzone) {
+  for (const name of ['dragenter', 'dragover']) {
+    photoDropzone.addEventListener(name, (event) => {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+      photoDropzone.classList.add('is-dragging');
+    });
+  }
+  photoDropzone.addEventListener('dragleave', (event) => {
+    if (!photoDropzone.contains(event.relatedTarget)) photoDropzone.classList.remove('is-dragging');
+  });
+  photoDropzone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    photoDropzone.classList.remove('is-dragging');
+    const files = [...(event.dataTransfer?.files || [])];
+    if (files.length < 1 || files.length > 3 || files.some(file => file.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
+      photoFeedback.textContent = '1 ila 3 JPG, PNG veya WebP fotoğrafı bırakın. Her biri en fazla 5 MB olabilir.';
+      return;
+    }
+    const transfer = new DataTransfer();
+    files.forEach(file => transfer.items.add(file));
+    photoInput.files = transfer.files;
+    photoInput.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
 
 const quoteForm = $('#quote-form');
+let quoteSubmitting = false;
 quoteForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (quoteSubmitting) return;
   const error = $('#form-error');
   error.classList.add('hidden');
   const files = [...photoInput.files];
@@ -195,6 +227,7 @@ quoteForm?.addEventListener('submit', async (event) => {
     error.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
+  quoteSubmitting = true;
   const button = quoteForm.querySelector('button[type=submit]');
   button.disabled = true;
   const previous = button.textContent;
@@ -208,12 +241,13 @@ quoteForm?.addEventListener('submit', async (event) => {
     $('#form-success').classList.remove('hidden');
     $('#form-success').scrollIntoView({ behavior: 'smooth', block: 'center' });
     quoteForm.reset();
-    $('#photo-preview').replaceChildren();
+    clearPhotoPreview();
     photoFeedback.textContent = '1 ila 3 JPG, PNG veya WebP fotoğrafı; her biri en fazla 5 MB.';
   } catch (cause) {
     error.textContent = cause.message;
     error.classList.remove('hidden');
   } finally {
+    quoteSubmitting = false;
     button.disabled = false;
     button.textContent = previous;
   }
@@ -228,8 +262,11 @@ const stageIcons = [
   '<path d="M2 5h12v11H2zM14 9h4l4 4v3h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',
   '<path d="M3 12 9 18 21 6"/><path d="M4 4h16v16H4z"/>',
 ];
+let tracking = false;
 $('#track-form')?.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (tracking) return;
+  tracking = true;
   const code = $('#tracking-code').value.trim().toUpperCase();
   const error = $('#track-error');
   const result = $('#track-result');
@@ -285,7 +322,7 @@ $('#track-form')?.addEventListener('submit', async (event) => {
       const form = document.createElement('form'); form.className = 'review-form';
       form.innerHTML = '<h4>Deneyiminizi paylaşın</h4><p>Yorumunuz ve adınız sitede yayınlanır. Adınızın görünmesini istemiyorsanız aşağıdaki kutuyu işaretleyin.</p><label>Puanınız <select name="rating" required><option value="5">5 / 5</option><option value="4">4 / 5</option><option value="3">3 / 5</option><option value="2">2 / 5</option><option value="1">1 / 5</option></select></label><label>Yorumunuz <textarea name="comment" maxlength="1000" required placeholder="Deneyiminizi yazın"></textarea></label><label class="review-anonymous"><input name="anonymous" type="checkbox"> İsmimi gizle</label><button type="submit">Yorumu gönder</button><p class="review-feedback" role="status"></p>';
       form.addEventListener('submit', async (event) => {
-        event.preventDefault(); const submit = form.querySelector('button'); submit.disabled = true;
+        event.preventDefault(); const submit = form.querySelector('button'); if (submit.disabled) return; submit.disabled = true;
         try {
           const response = await fetch('/api/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: data.code, rating: Number(form.elements.rating.value), comment: form.elements.comment.value, anonymous: form.elements.anonymous.checked }) });
           const answer = await response.json();
@@ -303,6 +340,7 @@ $('#track-form')?.addEventListener('submit', async (event) => {
     error.textContent = cause.message;
     error.classList.remove('hidden');
   } finally {
+    tracking = false;
     button.disabled = false;
     button.textContent = 'Durumu sorgula';
   }
