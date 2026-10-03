@@ -41,12 +41,14 @@ Bu işlem kodu sizin GitHub hesabınıza taşımaz; Render, mevcut herkese açı
 
 ## 4. Yönetici şifresini ekleyin
 
-Formdaki **Advanced → Environment Variables** bölümünü açın. İki satır ekleyin:
+Formdaki **Advanced → Environment Variables** bölümünü açın. Disk de aynı oluşturma ekranında eklenebiliyorsa iki satırı birlikte ekleyin:
 
 | Key kutusu | Value kutusu |
 | --- | --- |
 | `LOSTRA_ADMIN_PASSWORD` | Site sahibinin belirlediği **en az 8 karakterlik benzersiz yönetici şifresi** |
 | `LOSTRA_DATA_DIR` | `/var/data` |
+
+**Disk ancak servis oluşturulduktan sonra eklenebiliyorsa**, ilk ekranda yalnızca `LOSTRA_ADMIN_PASSWORD` satırını ekleyin. `LOSTRA_DATA_DIR=/var/data` satırını disk eklendikten sonra ekleyip **Save and deploy** seçin. Disk olmadan bu değeri girerseniz uygulama `/var/data` klasörünü açamaz ve yayın başarısız olur.
 
 Şifreyi GitHub'a veya rehber dosyasına yazmayın. Site sahibi isterse bu kutuya şifreyi kurulumu yaparken kendisi girebilir. **Şifre boşsa yönetici paneli açılmaz.** `PORT`, `RENDER`, `DATABASE_URL` ve Gemini için başka satır eklemeyin. Gemini anahtarı daha sonra yönetici panelindeki **Site Yapılandırması → Gemini bağlantısı** bölümüne girilir.
 
@@ -61,6 +63,8 @@ Formdaki **Advanced → Environment Variables** bölümünü açın. İki satır
 | **Size** | Ekranda sunulan en küçük uygun boyut |
 
 `Mount Path` ile yukarıdaki `LOSTRA_DATA_DIR` değeri **aynı** olmalı. Disk sonradan eklendiyse disk takılıp servis **Live** görünene kadar gerçek müşteri talebi almayın.
+
+Disk sonradan eklendiyse servisinizin **Environment** ekranına dönün, `LOSTRA_DATA_DIR` anahtarını `/var/data` değeriyle ekleyin ve **Save and deploy** seçin. Yeni dağıtım **Live** olmadan müşteri talebi kabul etmeyin.
 
 ### Veritabanı için ayrıca ne yapmalısınız?
 
@@ -79,6 +83,17 @@ SQLite veritabanı ayrı çalışan bir sunucu değildir. Uygulama bağlantıyı
 5. Gerçek müşteri bilgisi kullanmadan örnek talep ve fotoğraf yükleyin. Takip koduyla durumu sorgulayın; panelden aşamayı değiştirin ve **Çıkış yap** düğmesini deneyin.
 6. **Diski sınayın:** Örnek talebin takip kodunu not edin. Servisin **Deploys → Manual Deploy → Deploy latest commit** işlemini yapıp tekrar **Live** olmasını bekleyin. Aynı kodu yeniden sorgulayın ve panelde talep ile fotoğrafın hâlâ göründüğünü kontrol edin. Kayıt kaybolduysa gerçek müşteriye açmadan önce `LOSTRA_DATA_DIR` ile diskin **Mount Path** değerlerinin `/var/data` olduğunu kontrol edin.
 
+### `Permission denied: '/var/data'` hatası çıkarsa
+
+Derleme bitmiş olsa bile disk `/var/data` yoluna bağlanmadığında sunucu bu hatayla açılmaz. Mevcut servis üzerinde şunları yapın:
+
+1. Servisin **Compute** ekranında ücretli plan seçili mi bakın. **Free** seçiliyse **Compute → Edit** ile kalıcı disk destekleyen ücretli plana geçin ve **Save** seçin.
+2. Servisin **Disk** ekranında **Add disk** seçin. **Mount Path** kutusuna tam olarak `/var/data`, **Name** kutusuna `lostra-data` girin ve diski ekleyin.
+3. Servisin **Environment** ekranında `LOSTRA_DATA_DIR` değerinin tam olarak `/var/data` olduğunu doğrulayın; gerekiyorsa **Save and deploy** seçin.
+4. **Deploys** ekranında yeni yayının **Live** olduğunu kontrol edin. Render disk bağlarken yeniden dağıtım başlatır.
+
+Ücretli plana geçmeden yalnızca kısa deneme yapmak istiyorsanız **Environment** ekranından `LOSTRA_DATA_DIR` satırını kaldırıp **Save and deploy** seçebilirsiniz. Bu durumda kayıtlar ve fotoğraflar kalıcı değildir; gerçek müşteri verisi kullanmayın.
+
 ## 7. Daha sonra kod güncellenirse
 
 GitHub deposuna yeni sürüm gönderildiğinde Render'da kendi servisinizi açın: **Deploys → Manual Deploy → Deploy latest commit**. **Live** olunca yeni sürüm yayındadır. Bu bağlantı türünde otomatik yayın yoktur.
@@ -93,4 +108,5 @@ Yalnızca silinmesi sorun olmayan örnek verilerle deneme yapacaksanız ücretsi
 - [Elle yeni sürüm yayınlama](https://render.com/docs/deploys)
 - [Ortam değişkeni ekleme](https://render.com/docs/configure-environment-variables)
 - [Kalıcı disk](https://render.com/docs/disks)
+- [Servisin Compute planını değiştirme](https://render.com/docs/compute-plans)
 - [Ücretsiz planın dosya saklama sınırları](https://render.com/docs/free)
