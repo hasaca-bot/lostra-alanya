@@ -1,0 +1,11 @@
+data/
+__pycache__/
+tmp*/
+.env
+.env.*
+*.sqlite3
+*.db
+*.log
+*.pem
+*.key
+.DS_Store

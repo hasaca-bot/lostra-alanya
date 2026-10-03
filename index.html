@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lostra Alanya | Geleneksel Deri &amp; Ayakkabı Restorasyonu</title>
+<link href="/font.css" rel="stylesheet"/>
+<!-- Material Symbols Outlined (Exact Link Requirement) -->
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration Verbatim Insertion -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-dim": "#dadad8",
+            "surface-container": "#efeeec",
+            "surface-container-low": "#f4f3f1",
+            "secondary-fixed-dim": "#cbc5c0",
+            "secondary-container": "#e5dfd9",
+            "on-secondary-container": "#66625e",
+            "surface-container-high": "#e9e8e6",
+            "on-secondary-fixed": "#1d1b18",
+            "inverse-surface": "#2f3130",
+            "on-background": "#1a1c1b",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#494643",
+            "secondary-fixed": "#e7e1dc",
+            "on-tertiary-fixed": "#1e1b15",
+            "on-primary": "#ffffff",
+            "on-surface-variant": "#584239",
+            "error-container": "#ffdad6",
+            "tertiary-fixed": "#e9e1d7",
+            "outline-variant": "#dfc0b5",
+            "on-error-container": "#93000a",
+            "surface": "#faf9f7",
+            "error": "#ba1a1a",
+            "on-surface": "#1a1c1b",
+            "background": "#faf9f7",
+            "surface-container-highest": "#e3e2e0",
+            "on-primary-fixed": "#370e00",
+            "on-error": "#ffffff",
+            "primary-container": "#c45118",
+            "secondary": "#615e5a",
+            "surface-bright": "#faf9f7",
+            "on-tertiary-container": "#fffcff",
+            "primary-fixed-dim": "#ffb598",
+            "primary-fixed": "#ffdbce",
+            "on-tertiary-fixed-variant": "#4a463f",
+            "on-primary-fixed-variant": "#7e2c00",
+            "tertiary-fixed-dim": "#cdc5bc",
+            "on-tertiary": "#ffffff",
+            "primary": "#a23b00",
+            "inverse-on-surface": "#f1f1ef",
+            "surface-tint": "#a53c00",
+            "on-primary-container": "#fffcff",
+            "outline": "#8b7168",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#ffb598",
+            "tertiary-container": "#79746c",
+            "tertiary": "#605b54",
+            "surface-variant": "#e3e2e0"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-mobile": "1rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "space-2xl": "4rem",
+            "margin-mobile": "1.25rem",
+            "margin": "3rem",
+            "gutter": "1.5rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Google Sans", "Arial", "sans-serif"],
+            "body-sm": ["Google Sans", "Arial", "sans-serif"],
+            "headline-lg": ["Google Sans", "Arial", "sans-serif"],
+            "display-lg-mobile": ["Google Sans", "Arial", "sans-serif"],
+            "headline-sm": ["Google Sans", "Arial", "sans-serif"],
+            "headline-lg-mobile": ["Google Sans", "Arial", "sans-serif"],
+            "headline-md": ["Google Sans", "Arial", "sans-serif"],
+            "label-sm": ["Google Sans", "Arial", "sans-serif"],
+            "label-md": ["Google Sans", "Arial", "sans-serif"],
+            "title-md": ["Google Sans", "Arial", "sans-serif"],
+            "body-lg": ["Google Sans", "Arial", "sans-serif"],
+            "body-md": ["Google Sans", "Arial", "sans-serif"]
+          },
+          "fontSize": {
+            "display-lg": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "display-lg-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["22px", { "lineHeight": "30px", "letterSpacing": "0em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "0em", "fontWeight": "600" }],
+            "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "600" }],
+            "title-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["17px", { "lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-md": ["15px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+/* Atelier subtle custom styles */
+    .slider-handle-shadow {
+      box-shadow: 0 4px 16px -2px rgba(28, 26, 23, 0.25);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #dfc0b5;
+    }
+  </style>
+<link rel="stylesheet" href="/site.css?v=7"/><link rel="stylesheet" href="/tracking-ui.css?v=1"/><link rel="stylesheet" href="/chat-ui.css?v=5"/></head>
+<body class="bg-background text-on-surface antialiased selection:bg-primary-fixed selection:text-primary">
+<!-- ================= TOPNAVBAR (Shared Component Implementation) ================= -->
+<header class="w-full border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50 px-6 lg:px-12 transition-all duration-200 ease-in-out">
+<div class="max-w-7xl mx-auto flex items-center justify-between h-20">
+<!-- Brand Logo / Seal -->
+<a class="flex flex-col group" href="/">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-sm text-headline-sm text-white tracking-tight group-hover:text-primary transition-colors font-bold">Lostra Alanya</span>
+<span class="text-label-sm font-label-sm text-primary tracking-widest uppercase">Est. 1988</span>
+</div>
+<span class="font-body-sm text-body-sm text-white/80 tracking-normal -mt-1 hidden sm:inline">Geleneksel Deri &amp; Ayakkabı Restorasyonu</span>
+</a>
+<!-- Desktop Navigation Links -->
+<nav class="hidden lg:flex items-center gap-8" aria-label="Bölümler">
+<a class="site-nav-link text-label-md font-label-md" href="#hizmetler">Hizmetler</a>
+<a class="site-nav-link text-label-md font-label-md" href="#oncesi-sonrasi">Öncesi / Sonrası</a>
+<a class="site-nav-link text-label-md font-label-md" href="#calismalarimiz">Çalışmalarımız</a>
+<a class="site-nav-link text-label-md font-label-md" href="#nasil-calisir">Hakkımızda</a>
+<a class="site-nav-link text-label-md font-label-md" href="#iletisim">İletişim</a>
+</nav>
+<a class="nav-track" href="#takip">Talep Takibi</a>
+<!-- Trailing Action Buttons -->
+<div class="flex items-center gap-3">
+<a class="hidden sm:inline-flex items-center gap-2 border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-DEFAULT text-label-md font-label-md text-white hover:bg-white/20 transition-colors" href="#teklif-al">
+<svg class="icon text-[18px] text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8v.5Z"/></svg>
+          Talep Oluştur
+        </a>
+<a class="inline-flex items-center justify-center bg-primary-container text-on-primary px-5 py-2.5 rounded-DEFAULT text-label-md font-label-md font-semibold hover:bg-primary transition-colors shadow-sm" href="#teklif-al">
+          Fiyat &amp; Teklif Al
+        </a>
+</div>
+</div>
+<button id="menu-toggle" class="menu-toggle" type="button" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobile-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</header><nav id="mobile-nav" class="mobile-nav" hidden><a href="#hizmetler">Hizmetler</a><a href="#oncesi-sonrasi">Öncesi / Sonrası</a><a href="#calismalarimiz">Çalışmalarımız</a><a href="#takip">Talep Takibi</a><a href="#teklif-al">Teklif Al</a></nav>
+<main>
+<!-- ================= HERO SECTION ================= -->
+<section class="relative min-h-[92vh] flex items-center border-b border-outline-variant overflow-hidden bg-inverse-surface">
+<!-- Full-bleed background image -->
+<img alt="Usta ayakkabıcı atölyesinde kahverengi deri ayakkabıyı özenle restore ediyor." class="absolute inset-0 w-full h-full object-cover object-center" src="/hero-workshop-v2.png"/>
+<!-- Gradient & Darkening Overlay for readability -->
+<div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/30"></div>
+<!-- Foreground Hero Content Container -->
+<div class="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
+<div class="max-w-3xl flex flex-col justify-center">
+<p class="hero-kicker">Alanya Usta Deri Zanaatı</p>
+<!-- Main Headline -->
+<h1 class="font-display-lg text-headline-lg-mobile md:text-display-lg text-white tracking-tight mb-6 font-bold leading-tight">
+  <span data-site="hero_title_before">Ayakkabılarınızı Yeniden</span> <span class="italic text-primary font-bold" data-site="hero_title_accent">Hayata</span> <span data-site="hero_title_after">Döndürüyoruz.</span>
+</h1>
+<!-- Subtitle -->
+<p class="font-body-lg text-body-md md:text-body-lg text-surface-container-low/90 mb-8 max-w-2xl leading-relaxed" data-site="hero_subtitle">Temizleme, boyama, yenileme ve profesyonel tadilat.</p>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-10">
+<a class="inline-flex items-center justify-center gap-2.5 bg-primary-container hover:bg-primary text-on-primary px-7 py-3.5 rounded-DEFAULT font-label-md text-label-md font-semibold transition-all shadow-lg" href="#teklif-al">
+<svg class="icon text-[20px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8v.5Z"/></svg>
+    Fotoğrafla Talep Oluştur
+  </a>
+<a class="inline-flex items-center justify-center gap-2 border border-white/40 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-7 py-3.5 rounded-DEFAULT font-label-md text-label-md font-semibold transition-all" href="#teklif-al">
+    Online Teklif Formu Doldur
+    <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+</a>
+</div>
+<!-- Trust Badges Ribbon -->
+<div class="pt-6 border-t border-white/15 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
+<div class="flex items-center gap-2.5">
+<svg class="icon text-primary text-[20px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 2.6 1.6 3 .1 1.4 2.7 2.5 1.6-.3 3 1 2.8-1.9 2.3-.7 2.9-3 .7-2.3 1.9-2.8-1-3 .3-1.6-2.5-2.7-1.4-.1-3L2 12l1.6-2.6.1-3 2.7-1.4L8 2.5l3 .3L12 2Z"/><path d="m9 12 2 2 4-4"/></svg>
+<span class="font-label-sm text-label-sm uppercase font-semibold text-white/90 tracking-wider">Ücretsiz Ekspertiz</span>
+</div>
+<div class="flex items-center gap-2.5">
+<svg class="icon text-primary text-[20px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 1 0 10 10c0-1.7-1.3-3-3-3h-1a2 2 0 0 1-2-2c0-1.7-1.3-3-4-5Z"/></svg>
+<span class="font-label-sm text-label-sm uppercase font-semibold text-white/90 tracking-wider">Orijinal Boya &amp; Bakım</span>
+</div>
+<div class="flex items-center gap-2.5">
+<svg class="icon text-primary text-[20px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+<span class="font-label-sm text-label-sm uppercase font-semibold text-white/90 tracking-wider">Hızlı &amp; Güvenli Teslimat</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= BEFORE / AFTER INTERACTIVE RESTORATION SHOWCASE ================= -->
+<section class="border-b border-outline-variant bg-surface-container-low py-20 lg:py-28" id="oncesi-sonrasi">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-6 border-b border-outline-variant"><div><h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface font-bold">Öncesi &amp; Sonrası</h2></div></div>
+<!-- Filter Chips for Showcase Categories -->
+<!-- Interactive Comparison Slider Container -->
+<div class="border border-outline-variant bg-surface p-3 lg:p-6 mb-8"><div id="comparison-slider" class="relative w-full h-[400px] sm:h-[500px] lg:h-[620px] overflow-hidden select-none border border-outline-variant bg-[#fafafa] flex items-center justify-center" role="slider" tabindex="0" aria-label="Öncesi ve sonrası görsellerini karşılaştır" aria-valuemin="5" aria-valuemax="95" aria-valuenow="50"><div class="relative w-full h-full"><img alt="Restorasyon Öncesi - Kirli ve Yıpranmış Nike Sneaker" class="absolute inset-0 w-full h-full object-cover object-[center_60%]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKKNnRgbgASyMQ7dAKHtZkGSQ8Gop027vq7Km6qJlJ_N4QEI2CwIVpaYvCMazCdRTeyjotRaBdq1kNf8TyH3R54sb3cLHtIysLmVlr5D6FyYqt_UGnYM3PzZ-JjIZlPlC8hqNnyY7yFqv2fuNHJ6QeX5UurJDEU98qJX9X8puHaH1MbFyGAKOjLEPsaAvuZl7ET36ja4MGCpKRW0JApyqtRyqp_oGd8_P7_1Gz_dERhWfT2amjdLDsvlu-Y-jVgvKd=w2048"/><div id="after-layer" class="absolute inset-0 w-1/2 h-full overflow-hidden border-r-2 border-primary shadow-2xl"><img alt="Restorasyon Sonrası - Temizlenmiş ve Yenilenmiş Nike Sneaker" class="absolute top-0 left-0 h-full object-cover object-[center_60%] max-w-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7INmFdm7QLxjwlsMd0fbYAid-nloYiRnidxVTj6Mv3pqyqmbf0dpksogrHJ_PwZHy5vKahcc33DJk6-QtuUE7AGV2devIu9NNoVsnUZYDuWUg9NifvIQuJ5wLDmTvHLc7aURtB5Bu23k58QXAnyPvWjIUU0Ss0vUlJZaZtExhSDuVywuO13x6Elt2OyN2adII5CZAzXyWr8JcVQgb2tyZ_NAmhyoIbCnp9OhwmwqGBLK5Mxm5jKxXXhnAyBpQhv5J=w2048" style="width: var(--comparison-image-width, 200%);"/></div><div id="slider-handle" class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-between py-6 pointer-events-none z-10"><div class="comparison-caption">Bölünmüş Görünüm</div><div class="w-9 h-9 rounded-full bg-surface border-2 border-primary slider-handle-shadow flex items-center justify-center shadow-lg"><svg class="icon text-[18px] text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/></svg></div><div class="w-1 h-6 bg-transparent"></div></div><div class="absolute bottom-6 left-6 z-10 pointer-events-none"><div class="comparison-caption">Sonrası (Yenilenmiş)</div></div><div class="absolute bottom-6 right-6 z-10 pointer-events-none"><div class="comparison-caption">Öncesi (Orijinal Hal)</div></div></div></div></div>
+</div>
+</section>
+<!-- ================= HİZMETLERİMİZ (Editorial Minimal List Layout) ================= -->
+<section class="border-b border-outline-variant bg-surface py-20 lg:py-28" id="hizmetler">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Sticky Left Title Column -->
+<div class="lg:col-span-4 flex flex-col justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest font-semibold block mb-2">Uzmanlık Alanlarımız</span>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6 font-bold" data-site="services_title">Özenli &amp; Zanaatkar Hizmetlerimiz</h2>
+<p class="font-body-md text-body-md text-secondary leading-relaxed mb-6" data-site="services_intro">
+                Her ayakkabı ve deri ürün, kendi hikayesine ve malzeme hassasiyetine sahiptir. Seri fabrikasyon yerine parça odaklı geleneksel teknikler uyguluyoruz.
+              </p>
+</div>
+<div class="p-6 bg-surface-container-low border border-outline-variant hidden lg:block"><p class="font-title-md text-title-md text-on-surface mb-2">Özel Restorasyon Projeniz mi Var?</p><p class="font-body-sm text-body-sm text-secondary mb-4">Vintage parçalar ve nadir deri ürünler için atölye randevusu veriyoruz.</p><a class="text-primary font-label-md text-label-md font-semibold underline underline-offset-4 flex items-center gap-1" href="#teklif-al">Atölye ile İletişime Geç <svg class="icon text-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+</div>
+<!-- Right List Items (Hairline Separation, No Heavy Cards) -->
+<div class="lg:col-span-8 divide-y divide-outline-variant border-t border-b border-outline-variant">
+<!-- Service 01 -->
+<div class="py-8 group hover:bg-surface-container-low/40 transition-colors px-2"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-4"><span class="font-display-lg text-2xl text-outline-variant font-light group-hover:text-primary transition-colors">01</span><div><h3 class="font-headline-sm text-headline-sm text-on-surface">Profesyonel Ayakkabı Temizleme</h3><p class="font-body-md text-body-md text-secondary mt-1">Özel solüsyonlarla derinlemesine buharlı el temizliği ve bakteri arındırma.</p></div></div><a class="sm:self-center inline-flex items-center gap-1 text-primary text-label-md font-label-md font-semibold hover:translate-x-1 transition-transform whitespace-nowrap" href="#teklif-al">Detay ve Fiyat Al <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div></div>
+<!-- Service 02 -->
+<div class="py-8 group hover:bg-surface-container-low/40 transition-colors px-2"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-4"><span class="font-display-lg text-2xl text-outline-variant font-light group-hover:text-primary transition-colors">02</span><div><h3 class="font-headline-sm text-headline-sm text-on-surface">Özel Renk &amp; Deri Boyama</h3><p class="font-body-md text-body-md text-secondary mt-1">Orijinal fabrika tonuna dönüş veya yüksek elastikiyetli pigmentlerle renk değişimi.</p></div></div><a class="sm:self-center inline-flex items-center gap-1 text-primary text-label-md font-label-md font-semibold hover:translate-x-1 transition-transform whitespace-nowrap" href="#teklif-al">Detay ve Fiyat Al <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div></div>
+<!-- Service 03 -->
+<div class="py-8 group hover:bg-surface-container-low/40 transition-colors px-2"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-4"><span class="font-display-lg text-2xl text-outline-variant font-light group-hover:text-primary transition-colors">03</span><div><h3 class="font-headline-sm text-headline-sm text-on-surface">Komple Yenileme &amp; Restorasyon</h3><p class="font-body-md text-body-md text-secondary mt-1">Sedir kalıplama, kırışıklık giderme ve derin deri besleyici vaks bakımı.</p></div></div><a class="sm:self-center inline-flex items-center gap-1 text-primary text-label-md font-label-md font-semibold hover:translate-x-1 transition-transform whitespace-nowrap" href="#teklif-al">Detay ve Fiyat Al <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div></div>
+<!-- Service 04 -->
+<div class="py-8 group hover:bg-surface-container-low/40 transition-colors px-2"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-4"><span class="font-display-lg text-2xl text-outline-variant font-light group-hover:text-primary transition-colors">04</span><div><h3 class="font-headline-sm text-headline-sm text-on-surface">Usta İşi Tadilat &amp; Onarım</h3><p class="font-body-md text-body-md text-secondary mt-1">Manda kösele değişimi, dikiş tamiri ve Vibram® taban montajı.</p></div></div><a class="sm:self-center inline-flex items-center gap-1 text-primary text-label-md font-label-md font-semibold hover:translate-x-1 transition-transform whitespace-nowrap" href="#teklif-al">Detay ve Fiyat Al <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div></div>
+<!-- Service 05 -->
+<div class="py-8 group hover:bg-surface-container-low/40 transition-colors px-2"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-4"><span class="font-display-lg text-2xl text-outline-variant font-light group-hover:text-primary transition-colors">05</span><div><h3 class="font-headline-sm text-headline-sm text-on-surface">Tasarım Çanta &amp; Lüks Deri Bakımı</h3><p class="font-body-md text-body-md text-secondary mt-1">Kenar boyası (edge coat) yenileme, kulp onarımı ve metal donanım parlatma.</p></div></div><a class="sm:self-center inline-flex items-center gap-1 text-primary text-label-md font-label-md font-semibold hover:translate-x-1 transition-transform whitespace-nowrap" href="#teklif-al">Detay ve Fiyat Al <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div></div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= NASIL ÇALIŞIR? (4-Step Structured Process) ================= -->
+<section id="nasil-calisir" class="border-b border-outline-variant bg-surface-container-low py-20 lg:py-28">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="text-center max-w-2xl mx-auto mb-16">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest font-semibold block mb-2">Şeffaf &amp; Pratik İşleyiş</span>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4 font-bold" data-site="process_title">4 Aşamada Atölye Süreci</h2>
+<p class="font-body-md text-body-md text-secondary" data-site="process_intro">
+            Ayakkabınız ya da çantanız için sürpriz masraflar olmadan, ustanın doğrudan kontrolü altında zahmetsiz adımlar.
+          </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"><div class="p-8 bg-surface border border-outline-variant flex flex-col justify-between"><div><div class="flex items-center justify-between mb-6"><span class="step-number">01</span><svg class="icon text-primary text-[28px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v13H3Z"/><circle cx="12" cy="13" r="3"/></svg></div><h3 class="font-headline-sm text-title-md text-on-surface mb-2">Fotoğraf Gönder</h3><p class="font-body-sm text-body-sm text-secondary">Ürününüzün fotoğraflarını form üzerinden bize iletin.</p></div></div><div class="p-8 bg-surface border border-outline-variant flex flex-col justify-between"><div><div class="flex items-center justify-between mb-6"><span class="step-number">02</span><svg class="icon text-primary text-[28px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5"/></svg></div><h3 class="font-headline-sm text-title-md text-on-surface mb-2">Fiyat &amp; Teşhis Al</h3><p class="font-body-sm text-body-sm text-secondary">Ustamız incelesin, yapılacak işlem ve sabit fiyatı paylaşsın.</p></div></div><div class="p-8 bg-surface border border-outline-variant flex flex-col justify-between"><div><div class="flex items-center justify-between mb-6"><span class="step-number">03</span><svg class="icon text-primary text-[28px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h12v11H2zM14 9h4l4 4v3h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></div><h3 class="font-headline-sm text-title-md text-on-surface mb-2">Atölyeye Ulaştır</h3><p class="font-body-sm text-body-sm text-secondary">Atölyemize getirin veya kurye/kargo ile teslim edin.</p></div></div><div class="p-8 bg-surface border border-outline-variant flex flex-col justify-between"><div><div class="flex items-center justify-between mb-6"><span class="step-number">04</span><svg class="icon text-primary text-[28px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div><h3 class="font-headline-sm text-title-md text-on-surface mb-2">Yenilenmiş Al</h3><p class="font-body-sm text-body-sm text-secondary">İlk günkü formuna ve zarafetine kavuşmuş olarak teslim alın.</p></div></div></div>
+</div>
+</section>
+<!-- ================= ÇALIŞMALARIMIZDAN SEÇKİLER (Artisan Bento Grid) ================= -->
+<section class="border-b border-outline-variant bg-surface py-20 lg:py-28" id="calismalarimiz">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+<div>
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest font-semibold block mb-2">Atölye Arşivi</span>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface font-bold" data-site="gallery_title">Son Tamamlanan Restorasyonlar</h2>
+</div>
+<a class="mt-4 md:mt-0 inline-flex items-center gap-2 text-label-md font-label-md font-semibold text-on-surface hover:text-primary transition-colors" href="#teklif-al">
+            Benim ayakkabım için teklif al
+            <svg class="icon text-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h6v6m0-6-9 9"/><path d="M19 13v6H5V5h6"/></svg>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="border border-outline-variant bg-surface-container-low group flex flex-col justify-between">
+<div class="relative overflow-hidden aspect-[4/3] border-b border-outline-variant">
+<img alt="Detailed studio photography of a freshly restored Balenciaga Triple S luxury chunky sneaker with immaculate white leather panelling, deep cleaned complex tread sole, and precisely restored micro mesh accents sitting on a clean granite pedestal under high CRI atelier light." class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Detailed studio photography of a freshly restored Balenciaga Triple S luxury chunky sneaker with immaculate white leather panelling, deep cleaned complex tread sole, and precisely restored micro mesh accents sitting on a clean granite pedestal under high CRI atelier light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB856gmtdqdOxhbfVeVup-6uAFym-NYrPr6IksMpYoijA6jgSd6ra00_NSiE_aeIY42kLVU0M_CfJYdTrM_mXsiU1yMSWfD7ymHf8hPOuViNMzMsRjdy3uygHiRAm8VoJVJ4i-BR9umIpTpcdrEz3YXDHocp5m5pjm-2VcRqqdsCCxkHtDLbdTj1OKKUUCDK_3cuV1l2x3vvMF1-VIjzk8ahAw9q8q7ue7vA2jCZvebs69kzvf9EJ4"/>
+</div>
+<div class="p-6"><p class="gallery-label">Sneaker Restorasyon</p>
+<h3 class="font-headline-sm text-title-md text-on-surface mb-2">Balenciaga Triple S • Taban &amp; Renk Yenileme</h3>
+<p class="font-body-sm text-body-sm text-secondary mb-4">Taban temizliği, topuk onarımı ve orijinal renk restorasyonu.</p>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant text-label-sm">
+<span class="text-outline font-medium">Uygulanan: 3 Aşamalı Kür</span>
+<span class="text-primary font-semibold">Teslim Edildi</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="border border-outline-variant bg-surface-container-low group flex flex-col justify-between">
+<div class="relative overflow-hidden aspect-[4/3] border-b border-outline-variant">
+<img alt="Macro angle of a gentlemen's Church's English Oxford dress shoe handcrafted in rich mahogany calfskin, displaying pristine welt hand stitching, brand new burnished leather sole, mirror shine toe cap glasure, and handcrafted brass eyelets." class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Macro angle of a gentlemen's Church's English Oxford dress shoe handcrafted in rich mahogany calfskin, displaying pristine welt hand stitching, brand new burnished leather sole, mirror shine toe cap glasure, and handcrafted brass eyelets." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3sRSV0kokExXPhS4V5m_YsOUOLkdEDQuBWuJ_mWlfNsF8uTV-_TSoBT5J2jhLrYv6ihDXixWj72Ax9syUd2o70xTDjmpbDeY-Iy_0I8PSD8l-9X4AMRvmjaEr2w-_WekBbOgojINwEOSBZeGFiZ5IpcpLjwgm-Ivj7N2A-R8xBaUUeyRoDFeiLTqSDMJeH4F90fVU8dYhTuu1WIJ1wKJw4A3EmuATcZmLFkFHVyjdXDzyLLkqNcY"/>
+</div>
+<div class="p-6"><p class="gallery-label">Klasik Kösele &amp; Patina</p>
+<h3 class="font-headline-sm text-title-md text-on-surface mb-2">Church's Oxford • Manda Kösele &amp; Ayna Patina</h3>
+<p class="font-body-sm text-body-sm text-secondary mb-4">Elde kösele taban dikimi, burun ayna cilası ve deri besleme.</p>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant text-label-sm">
+<span class="text-outline font-medium">Uygulanan: Goodyear Welt</span>
+<span class="text-primary font-semibold">Teslim Edildi</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="border border-outline-variant bg-surface-container-low group flex flex-col justify-between">
+<div class="relative overflow-hidden aspect-[4/3] border-b border-outline-variant">
+<img alt="Close up photography of a luxury Louis Vuitton designer monogram handbag undergoing bespoke edge coat lacquer restoration, showing clean terracotta tinted wax edges, pristine brass hardware polishing, and supple leather conditioning on an antique workbench." class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Close up photography of a luxury Louis Vuitton designer monogram handbag undergoing bespoke edge coat lacquer restoration, showing clean terracotta tinted wax edges, pristine brass hardware polishing, and supple leather conditioning on an antique workbench." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYNPfkQV52M8x9Ma54E3zSJdprtVbTTywC_Wd2T5MKL9g0Ra9nfRAn_5qItryyqEnArqeCg5osNx9d4Gm2C9ltSOE1BOclRJ61mKu5znWaff73xpRWhSnRFg2Y2RfhpfNjUCFMtwCR-xTujOgdJfdQIiS__BVzp9XrjaGMgf2hreDf9PtgEOCb4FhRd2oD03w6EyIdAS-1vh6kCgIXwF9Z1ZA996Tqr_wOJ9w3gYFt4DTCIoVU58w"/>
+</div>
+<div class="p-6"><p class="gallery-label">Lüks Çanta Restorasyonu</p>
+<h3 class="font-headline-sm text-title-md text-on-surface mb-2">Louis Vuitton Monogram • Kenar Cilası &amp; Donanım</h3>
+<p class="font-body-sm text-body-sm text-secondary mb-4">Kenar boyası yenileme, kulp onarımı ve metal kilit polisajı.</p>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant text-label-sm">
+<span class="text-outline font-medium">Uygulanan: Kenar Vaksı &amp; Polisaj</span>
+<span class="text-primary font-semibold">Teslim Edildi</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= HIZLI TEKLİF ALMA MODÜLÜ / FORMU ================= -->
+<section class="border-b border-outline-variant bg-surface-container-low py-20 lg:py-28" id="teklif-al">
+<div class="max-w-4xl mx-auto px-6 lg:px-12">
+<div class="border border-outline-variant bg-surface p-8 sm:p-12 shadow-sm">
+<div class="border-b border-outline-variant pb-8 mb-8 text-center sm:text-left">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest font-semibold block mb-2">Usta Ekspertizi</span>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-3 font-bold" data-site="form_title">Ayakkabınız İçin Teklif Talebi Oluşturun</h2>
+<p class="font-body-md text-body-md text-secondary" data-site="form_intro">Bilgilerinizi ve ayakkabı fotoğraflarını gönderin. Talebinizi takip edebilmeniz için size özel bir kod verelim.</p>
+</div>
+<form class="space-y-6" id="quote-form" enctype="multipart/form-data">
+<!-- Contact Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-2" for="name">Adınız Soyadınız *</label>
+<input class="w-full h-12 px-4 bg-surface border border-outline-variant text-on-surface focus:border-on-surface focus:ring-0 text-body-md transition-colors" id="name" name="name" autocomplete="name" maxlength="100" placeholder="Örn: Ahmet Yılmaz" required="" type="text"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-2" for="phone">Telefon Numaranız *</label>
+<input class="w-full h-12 px-4 bg-surface border border-outline-variant text-on-surface focus:border-on-surface focus:ring-0 text-body-md transition-colors" id="phone" name="phone" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="0 (5XX) XXX XX XX" required="" type="tel"/>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-2" for="model">Marka ve model *</label>
+<input class="w-full h-12 px-4 bg-surface border border-outline-variant text-on-surface focus:border-on-surface focus:ring-0 text-body-md transition-colors" id="model" name="model" maxlength="100" placeholder="Örn: Nike Air Force 1" required type="text"/>
+</div>
+<!-- Product Type Selectors -->
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-3">Ürün Türü Seçiniz *</label>
+<div id="product-options" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input checked="" class="text-primary-container focus:ring-0 border-outline" name="product_type" type="radio" value="Klasik Deri"/>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Klasik Kösele Deri</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline" name="product_type" type="radio" value="Sneaker"/>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Lüks Sneaker</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline" name="product_type" type="radio" value="Süet / Nubuk"/>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Süet &amp; Nubuk</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline" name="product_type" type="radio" value="Bot / Çizme"/>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Bot &amp; Çizme</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline" name="product_type" type="radio" value="Tasarım Çanta"/>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Tasarım Deri Çanta</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline" name="product_type" type="radio" value="Diğer"/>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Deri Ceket / Kemer</span>
+</label>
+</div>
+</div>
+<!-- Required Services Checkboxes -->
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-3">İhtiyaç Duyulan İşlemler (Birden Fazla Seçebilirsiniz)</label>
+<div id="service-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input checked="" class="text-primary-container focus:ring-0 border-outline rounded-DEFAULT" name="services" type="checkbox" value="Derin Temizlik"/>
+<span class="font-body-sm text-body-sm text-on-surface">Derin Buharlı Temizlik &amp; Dezenfeksiyon</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline rounded-DEFAULT" name="services" type="checkbox" value="Boya &amp; Patina"/>
+<span class="font-body-sm text-body-sm text-on-surface">Orijinal Renk Boyama / Renk Değişimi</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline rounded-DEFAULT" name="services" type="checkbox" value="Taban &amp; Kösele"/>
+<span class="font-body-sm text-body-sm text-on-surface">Kösele / Taban Değişimi &amp; Tadilat</span>
+</label>
+<label class="cursor-pointer border border-outline-variant p-3 bg-surface hover:bg-surface-container-low transition-colors flex items-center gap-2.5">
+<input class="text-primary-container focus:ring-0 border-outline rounded-DEFAULT" name="services" type="checkbox" value="Komple Restorasyon"/>
+<span class="font-body-sm text-body-sm text-on-surface">Komple Restorasyon (Astar, Kalıp, Cila)</span>
+</label>
+</div>
+</div>
+<!-- Description / Atelier Notes -->
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-2" for="notes">Ürün Durumu ve Özel Talepleriniz</label>
+<textarea class="w-full p-4 bg-surface border border-outline-variant text-on-surface focus:border-on-surface focus:ring-0 text-body-md transition-colors" id="notes" name="notes" maxlength="2000" placeholder="Örneğin: Sol ayakkabının burun derisinde derin sürtünme çiziği var, orijinal taba rengine sadık kalınmasını istiyorum..." rows="3"></textarea>
+</div>
+<!-- Photo Upload Dropzone -->
+<div>
+<label for="photos" class="block font-label-md text-label-md font-semibold text-on-surface mb-2">Ayakkabı Fotoğrafları *</label>
+<div id="photo-dropzone" class="border-2 border-dashed border-outline-variant p-6 text-center bg-surface hover:bg-surface-container-low/50 transition-colors cursor-pointer relative">
+<input accept="image/jpeg,image/png,image/webp" aria-label="Ayakkabı fotoğraflarını seç" class="absolute inset-0 opacity-0 cursor-pointer" id="photos" name="photos" multiple required type="file"/>
+<svg class="upload-illustration" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="5" y="8" width="54" height="48" rx="8" fill="currentColor"/><circle cx="25" cy="24" r="5" fill="#fff"/><path d="M12 44.5 21.5 35a5 5 0 0 1 7 0l4 4-10 10H16a4 4 0 0 1-4-4v-.5Z" fill="#fff"/><path d="m28 49 13.5-14a5 5 0 0 1 7 0L57 43v6H28Z" fill="#fff"/></svg>
+<p class="font-label-md text-label-md font-semibold text-on-surface">Fotoğrafları Buraya Sürükleyin veya Dosya Seçin</p>
+</div>
+<p id="photo-feedback" class="mt-2 text-sm text-secondary" aria-live="polite">1 ila 3 JPG, PNG veya WebP fotoğrafı; her biri en fazla 5 MB.</p>
+<div id="photo-preview" class="photo-preview"></div>
+</div>
+<!-- Submit Buttons -->
+<div class="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+<button class="flex-1 bg-primary-container hover:bg-primary text-on-primary py-3.5 px-6 rounded-DEFAULT font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-2" type="submit">
+<svg class="icon text-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                Talebi Ustaya İlet
+              </button>
+</div>
+<p class="text-center font-body-sm text-body-sm text-secondary pt-2">
+              Bilgileriniz talebinizi değerlendirmek ve sizinle iletişime geçmek için kullanılır.
+            </p>
+<p id="form-error" class="form-error hidden" role="alert"></p>
+</form>
+<!-- Form Success Alert Mockup (Hidden by default, triggered by JS) -->
+<div class="hidden mt-6 p-4 bg-surface-container border border-on-surface text-center" id="form-success" role="status" aria-live="polite">
+<svg class="icon text-primary text-[28px] mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+<p class="font-headline-sm text-title-md text-on-surface">Talebiniz Ustamıza Ulaştı</p>
+<p class="font-body-sm text-body-sm text-secondary mt-1">Takip kodunuz: <strong id="created-code" class="tracking-code"></strong><br/>Bu kodu kaydedin ve aşağıdaki alandan talebinizi takip edin.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="takip" class="tracking-section reveal">
+<div class="tracking-card">
+<div><span class="eyebrow">Sipariş Takibi</span><h2 data-site="tracking_title">Ayakkabınız hangi aşamada?</h2><p data-site="tracking_intro">Talep oluşturunca verilen kodu girin. Son durum yalnızca sorguladığınızda yüklenir.</p></div>
+<form id="track-form" class="track-form"><label for="tracking-code">Takip kodu</label><div class="track-input-row"><input id="tracking-code" name="code" placeholder="LA-ABCD-2345" autocomplete="off" required/><button type="submit">Durumu sorgula</button></div><p id="track-error" class="form-error hidden" role="alert"></p></form>
+<div id="track-result" class="track-result hidden" aria-live="polite"></div>
+</div></section>
+<section id="iletisim" class="contact-section reveal"><div class="contact-inner"><span class="eyebrow">İletişim</span><h2 data-site="contact_title">Ustanızla görüşmeye başlayın</h2><p data-site="contact_intro">Ayakkabınızın fotoğrafını ve ihtiyacınızı gönderin. Talebiniz atölye ekranına düşer ve takip koduyla gelişmeleri görebilirsiniz.</p><div class="contact-actions"><a class="primary-action" href="#teklif-al">Fotoğrafla talep oluştur</a><a class="secondary-action" href="#takip">Talebimi takip et</a></div></div></section>
+</main>
+<!-- ================= FOOTER (Shared Component Implementation) ================= -->
+<footer class="w-full border-t border-outline-variant bg-surface-container-low px-6 lg:px-12 py-16">
+<div class="max-w-7xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12 pb-12 border-b border-outline-variant">
+<!-- Brand Column -->
+<div class="lg:col-span-2">
+<div class="flex items-baseline gap-2 mb-2">
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-bold">Lostra Alanya</span>
+<span class="text-label-sm font-label-sm text-primary tracking-widest uppercase">Est. 1988</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary max-w-sm leading-relaxed mb-6" data-site="footer_intro">
+            Geleneksel Deri &amp; Ayakkabı Restorasyonu. Tüketim çağına inat; sevdiğiniz, anısı olan ayakkabı ve deri eşyalarınızı usta el işçiliğiyle geleceğe taşıyoruz.
+          </p>
+<div class="flex items-center gap-3">
+<span class="font-label-sm text-label-sm text-secondary">Hızlı Bağlantılar:</span>
+<a class="text-on-surface hover:text-primary font-semibold text-label-md" href="#calismalarimiz">Çalışmalarımız</a>
+<span class="text-outline-variant">•</span>
+<a class="text-on-surface hover:text-primary font-semibold text-label-md" href="#takip">Talep Takibi</a>
+</div>
+</div>
+<!-- Links Column 1 (Shared JSON links) -->
+<div>
+<h4 class="font-headline-sm text-title-md text-on-surface mb-4">Hizmetlerimiz</h4>
+<ul class="space-y-2.5 font-label-sm text-label-sm text-secondary">
+<li><a class="hover:text-on-surface transition-colors" href="#hizmetler">Hizmet Detayları</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#hizmetler">Ayakkabı Boyama &amp; Patina</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#hizmetler">Goodyear Kösele Onarımı</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#hizmetler">Lüks Sneaker Bakımı</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#hizmetler">Deri Çanta Yenileme</a></li>
+</ul>
+</div>
+<!-- Links Column 2 -->
+<div>
+<h4 class="font-headline-sm text-title-md text-on-surface mb-4">Atölye Prensipleri</h4>
+<ul class="space-y-2.5 font-label-sm text-label-sm text-secondary">
+<li><a class="hover:text-on-surface transition-colors" href="#nasil-calisir">Süreç Nasıl İşler?</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#nasil-calisir">Atölye Prensipleri</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#oncesi-sonrasi">Öncesi / Sonrası Galerisi</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#teklif-al">Ekspertiz ve Danışma</a></li>
+</ul>
+</div>
+<!-- Links Column 3 (Legal / Contract from JSON) -->
+<div>
+<h4 class="font-headline-sm text-title-md text-on-surface mb-4">Hızlı Erişim</h4>
+<ul class="space-y-2.5 font-label-sm text-label-sm text-secondary">
+<li><a class="hover:text-on-surface transition-colors" href="/">Ana Sayfa</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#teklif-al">Talep Oluştur</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#iletisim">İletişim &amp; Ulaşım</a></li>
+<li><a class="hover:text-on-surface transition-colors" href="#takip">Sipariş Takibi</a></li>
+</ul>
+</div>
+</div>
+<!-- Copyright Sub-bar (Shared JSON implementation) -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4 font-body-sm text-body-sm text-secondary">
+<div>
+          © 2026 Lostra Alanya. Tüm Hakları Saklıdır. Geleneksel Deri &amp; Ayakkabı Restorasyonu.
+        </div>
+<div class="flex items-center gap-4 text-label-sm text-secondary">
+<a href="/admin" class="admin-footer-link">Yönetim paneli</a>
+<span>•</span>
+<span class="text-primary font-semibold">El Zanaatı Kültürü</span>
+</div>
+</div>
+</div>
+</footer>
+<!-- ================= INLINE SCRIPTS (Before/After Slider & Micro Interactions) ================= -->
+<script defer src="/diagnostics-client.js?v=1"></script><script defer src="/app.js?v=7"></script><script defer src="/chat-ui.js?v=6"></script>
+</body></html>
