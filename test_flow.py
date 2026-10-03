@@ -1,6 +1,7 @@
 """End-to-end checks for upload, tracking, admin update, and event notification."""
 import json
 import os
+import random
 from io import BytesIO
 from PIL import Image
 import shutil
@@ -143,6 +144,33 @@ class FlowTests(unittest.TestCase):
         self.assertEqual((saved["model"], saved["admin_note"]), ("Nike Air Force 1", "Taban kontrolü"))
         self.assertEqual(self.call("/api/track?code=LA-AAAA-AAAA")[0], 404)
         self.assertEqual(self.call("/api/requests", "POST", b"{}", "application/json")[0], 400)
+
+    def test_customer_upload_over_five_megabytes(self):
+        boundary = "lostra-large-photo-test"
+        width, height = 1800, 1200
+        image = Image.frombytes("RGB", (width, height), random.Random(731).randbytes(width * height * 3))
+        encoded = BytesIO()
+        image.save(encoded, format="PNG")
+        photo = encoded.getvalue()
+        self.assertGreater(len(photo), 5 * 1024 * 1024)
+        fields = {"name": "Büyük Fotoğraf", "phone": "0555 123 45 67", "model": "Nike Test", "product_type": app.DEFAULT_SITE["product_types"][0], "services": app.DEFAULT_SITE["services"][0]}
+        parts = [f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'.encode() for name, value in fields.items()]
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="photos"; filename="large.png"\r\nContent-Type: image/png\r\n\r\n'.encode() + photo + b'\r\n')
+        body = b''.join(parts) + f'--{boundary}--\r\n'.encode()
+        request = Request(self.url + "/api/requests", data=body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}"}, method="POST")
+        with urlopen(request, timeout=30) as response:
+            self.assertEqual(response.status, 201)
+            code = json.load(response)["code"]
+        connection = app.db_connect()
+        try:
+            row = connection.execute("SELECT photos FROM requests WHERE code=?", (code,)).fetchone()
+            image_path = app.DATA / json.loads(row["photos"])[0].lstrip("/")
+            self.assertGreater(image_path.stat().st_size, 5 * 1024 * 1024)
+            connection.execute("DELETE FROM requests WHERE code=?", (code,))
+            connection.commit()
+        finally:
+            connection.close()
+        image_path.unlink()
 
     def test_completed_request_opens_personalized_draft_without_sharing_customer_data_with_ai(self):
         code = "LA-MSGG-TEST"

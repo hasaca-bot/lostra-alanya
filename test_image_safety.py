@@ -73,22 +73,19 @@ class ImageSafetyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Hareketli"):
             image_safety.validate_image(output.getvalue())
 
-    def test_size_limits_before_and_after_reencoding(self):
+    def test_decoded_and_stored_size_limits(self):
         with patch.object(image_safety, "MAX_IMAGE_PIXELS", 90):
             with self.assertRaisesRegex(ValueError, "megapiksel"):
                 image_safety.validate_image(picture())
         with patch.object(image_safety, "MAX_IMAGE_DIMENSION", 10):
             with self.assertRaisesRegex(ValueError, "megapiksel"):
                 image_safety.validate_image(picture())
-        with patch.object(image_safety, "MAX_IMAGE_BYTES", 10):
-            with self.assertRaisesRegex(ValueError, "5 MB"):
-                image_safety.validate_image(picture())
-        # A compact palette source expands on RGB output; bound the saved result too.
+        # A compact palette source expands on RGB output; bound the saved result.
         source = Image.new("P", (12, 8))
         output = BytesIO()
         source.save(output, format="PNG", bits=1)
         original = output.getvalue()
-        with patch.object(image_safety, "MAX_IMAGE_BYTES", len(original)):
+        with patch.object(image_safety, "MAX_STORED_IMAGE_BYTES", len(original)):
             # Select an encoding that demonstrably expands instead of assuming it.
             with patch.object(image_safety.Image.Image, "save", side_effect=lambda out, **kw: out.write(b"x" * (len(original) + 1))):
                 with self.assertRaisesRegex(ValueError, "İşlenen"):

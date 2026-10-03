@@ -103,6 +103,12 @@ class SecurityTests(unittest.TestCase):
         with patch.object(app, "db_connect", side_effect=AssertionError("Session check must not open DB")):
             self.assertEqual(self.call("/api/revision")[0], 200)
 
+    def test_customer_upload_total_body_limit(self):
+        with patch.object(app, "MAX_BODY", 100), patch.object(app, "db_connect", side_effect=AssertionError("Oversized upload must not open DB")):
+            status, _, body = self.call("/api/requests", "POST", b"x" * 101, {"Content-Type": "multipart/form-data; boundary=test"}, auth=False)
+        self.assertEqual(status, 413)
+        self.assertIn("toplam boyutu", body.decode("utf-8"))
+
     def test_eight_character_password_is_accepted(self):
         data = json.dumps({"password": "12345678"}).encode()
         headers = {"Content-Type": "application/json"}

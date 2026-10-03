@@ -33,12 +33,24 @@ DATA = Path(os.environ.get("LOSTRA_DATA_DIR", str(ROOT / "data"))).resolve()
 UPLOADS = DATA / "uploads"
 SITE_IMAGES = DATA / "site-images"
 DB = DATA / "lostra.sqlite3"
-MAX_BODY = 16 * 1024 * 1024
+MAX_BODY = 48 * 1024 * 1024
+MAX_CUSTOMER_PHOTOS_TOTAL = 47 * 1024 * 1024
+MAX_SITE_IMAGE_BODY = 16 * 1024 * 1024
 MAX_PHOTOS = 3
 MAX_PHOTO_SIZE = 5 * 1024 * 1024
 STATUSES = ("Yeni", "İnceleniyor", "Hazırlanıyor", "Tamamlandı", "Gönderildi", "Teslim Edildi")
 GEMINI_MODEL = "gemini-3.6-flash"
 EMOJI_PATTERN = re.compile(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D]")
+GALLERY_ASSETS = (
+    "/assets/gallery/sneaker-restoration.webp",
+    "/assets/gallery/leather-oxford-care.webp",
+    "/assets/gallery/leather-bag-repair.webp",
+)
+LEGACY_GALLERY = (
+    {"label": "Sneaker Restorasyon", "title": "Balenciaga Triple S • Taban & Renk Yenileme", "intro": "Taban temizliği, topuk onarımı ve orijinal renk restorasyonu.", "image_prefix": "https://lh3.googleusercontent.com/aida-public/AB6AXuB856gmtdqdOxhbf"},
+    {"label": "Klasik Kösele & Patina", "title": "Church's Oxford • Manda Kösele & Ayna Patina", "intro": "Elde kösele taban dikimi, burun ayna cilası ve deri besleme.", "image_prefix": "https://lh3.googleusercontent.com/aida-public/AB6AXuA3sRSV0kokExXPh"},
+    {"label": "Lüks Çanta Restorasyonu", "title": "Louis Vuitton Monogram • Kenar Cilası & Donanım", "intro": "Kenar boyası yenileme, kulp onarımı ve metal kilit polisajı.", "image_prefix": "https://lh3.googleusercontent.com/aida-public/AB6AXuDYNPfkQV52M8x9"},
+)
 
 
 def plain_chat_text(value):
@@ -53,7 +65,7 @@ DEFAULT_SITE = {
         "services_intro": "Her ayakkabı ve deri ürün, kendi hikayesine ve malzeme hassasiyetine sahiptir. Seri fabrikasyon yerine parça odaklı geleneksel teknikler uyguluyoruz.",
         "process_title": "4 Aşamada Atölye Süreci",
         "process_intro": "Ayakkabınız ya da çantanız için sürpriz masraflar olmadan, ustanın doğrudan kontrolü altında zahmetsiz adımlar.",
-        "gallery_title": "Son Tamamlanan Restorasyonlar",
+        "gallery_title": "Deri ve Ayakkabı Bakımından Kareler",
         "form_title": "Ayakkabınız İçin Teklif Talebi Oluşturun",
         "form_intro": "Bilgilerinizi ve ayakkabı fotoğraflarını gönderin. Talebinizi takip edebilmeniz için size özel bir kod verelim.",
         "tracking_title": "Ayakkabınız hangi aşamada?",
@@ -79,18 +91,18 @@ DEFAULT_SITE = {
         "step_3_intro": "Atölyemize getirin veya kurye/kargo ile teslim edin.",
         "step_4_title": "Yenilenmiş Al",
         "step_4_intro": "İlk günkü formuna ve zarafetine kavuşmuş olarak teslim alın.",
-        "gallery_1_label": "Sneaker Restorasyon",
-        "gallery_1_title": "Balenciaga Triple S • Taban & Renk Yenileme",
-        "gallery_1_intro": "Taban temizliği, topuk onarımı ve orijinal renk restorasyonu.",
-        "gallery_1_image": "https://lh3.googleusercontent.com/aida-public/AB6AXuB856gmtdqdOxhbfVeVup-6uAFym-NYrPr6IksMpYoijA6jgSd6ra00_NSiE_aeIY42kLVU0M_CfJYdTrM_mXsiU1yMSWfD7ymHf8hPOuViNMzMsRjdy3uygHiRAm8VoJVJ4i-BR9umIpTpcdrEz3YXDHocp5m5pjm-2VcRqqdsCCxkHtDLbdTj1OKKUUCDK_3cuV1l2x3vvMF1-VIjzk8ahAw9q8q7ue7vA2jCZvebs69kzvf9EJ4",
-        "gallery_2_label": "Klasik Kösele & Patina",
-        "gallery_2_title": "Church's Oxford • Manda Kösele & Ayna Patina",
-        "gallery_2_intro": "Elde kösele taban dikimi, burun ayna cilası ve deri besleme.",
-        "gallery_2_image": "https://lh3.googleusercontent.com/aida-public/AB6AXuA3sRSV0kokExXPhS4V5m_YsOUOLkdEDQuBWuJ_mWlfNsF8uTV-_TSoBT5J2jhLrYv6ihDXixWj72Ax9syUd2o70xTDjmpbDeY-Iy_0I8PSD8l-9X4AMRvmjaEr2w-_WekBbOgojINwEOSBZeGFiZ5IpcpLjwgm-Ivj7N2A-R8xBaUUeyRoDFeiLTqSDMJeH4F90fVU8dYhTuu1WIJ1wKJw4A3EmuATcZmLFkFHVyjdXDzyLLkqNcY",
-        "gallery_3_label": "Lüks Çanta Restorasyonu",
-        "gallery_3_title": "Louis Vuitton Monogram • Kenar Cilası & Donanım",
-        "gallery_3_intro": "Kenar boyası yenileme, kulp onarımı ve metal kilit polisajı.",
-        "gallery_3_image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDYNPfkQV52M8x9Ma54E3zSJdprtVbTTywC_Wd2T5MKL9g0Ra9nfRAn_5qItryyqEnArqeCg5osNx9d4Gm2C9ltSOE1BOclRJ61mKu5znWaff73xpRWhSnRFg2Y2RfhpfNjUCFMtwCR-xTujOgdJfdQIiS__BVzp9XrjaGMgf2hreDf9PtgEOCb4FhRd2oD03w6EyIdAS-1vh6kCgIXwF9Z1ZA996Tqr_wOJ9w3gYFt4DTCIoVU58w",
+        "gallery_1_label": "Sneaker Bakımı",
+        "gallery_1_title": "Sneaker Temizliği ve Renk Yenileme",
+        "gallery_1_intro": "Kumaş, deri ve taban bakımının atölyedeki ayrıntıları.",
+        "gallery_1_image": GALLERY_ASSETS[0],
+        "gallery_2_label": "Deri Ayakkabı Bakımı",
+        "gallery_2_title": "Klasik Oxford Deri Bakımı",
+        "gallery_2_intro": "Deri besleme, patina ve cila uygulamalarına yakın bakış.",
+        "gallery_2_image": GALLERY_ASSETS[1],
+        "gallery_3_label": "Deri Çanta Onarımı",
+        "gallery_3_title": "Deri Çantada Kenar ve Kulp Bakımı",
+        "gallery_3_intro": "Yıpranmış deri kenarlar ve kulp detayları için bakım.",
+        "gallery_3_image": GALLERY_ASSETS[2],
     },
     "product_types": ["Klasik Kösele Deri", "Lüks Sneaker", "Süet & Nubuk", "Bot & Çizme", "Tasarım Deri Çanta", "Deri Ceket / Kemer"],
     "services": ["Derin Buharlı Temizlik & Dezenfeksiyon", "Orijinal Renk Boyama / Renk Değişimi", "Kösele / Taban Değişimi & Tadilat", "Komple Restorasyon (Astar, Kalıp, Cila)"],
@@ -224,7 +236,26 @@ def initialize():
         connection.execute("INSERT OR IGNORE INTO site_settings (id,config) VALUES (1,?)", (json.dumps(DEFAULT_SITE, ensure_ascii=False),))
         saved = json.loads(connection.execute("SELECT config FROM site_settings WHERE id=1").fetchone()["config"])
         legacy_gallery = [{key: saved.get("content", {}).get(f"gallery_{index}_{key}", DEFAULT_SITE["content"][f"gallery_{index}_{key}"]) for key in ("label", "title", "intro", "image")} for index in range(1, 4)]
-        merged = {**DEFAULT_SITE, **saved, "content": {**DEFAULT_SITE["content"], **saved.get("content", {})}, "gallery": saved.get("gallery", legacy_gallery)}
+        merged = {**DEFAULT_SITE, **saved, "content": {**DEFAULT_SITE["content"], **saved.get("content", {})}, "gallery": [dict(item) for item in saved.get("gallery", legacy_gallery)]}
+        if merged["content"]["gallery_title"] == "Son Tamamlanan Restorasyonlar":
+            merged["content"]["gallery_title"] = DEFAULT_SITE["content"]["gallery_title"]
+        for index, old in enumerate(LEGACY_GALLERY, 1):
+            for field in ("label", "title", "intro"):
+                key = f"gallery_{index}_{field}"
+                if merged["content"].get(key) == old[field]:
+                    merged["content"][key] = DEFAULT_SITE["content"][key]
+            key = f"gallery_{index}_image"
+            if merged["content"].get(key, "").startswith(old["image_prefix"]):
+                merged["content"][key] = DEFAULT_SITE["content"][key]
+        for item in merged["gallery"]:
+            for index, old in enumerate(LEGACY_GALLERY):
+                if not item.get("image", "").startswith(old["image_prefix"]):
+                    continue
+                for field in ("label", "title", "intro"):
+                    if item.get(field) == old[field]:
+                        item[field] = DEFAULT_SITE["gallery"][index][field]
+                item["image"] = GALLERY_ASSETS[index]
+                break
         if merged != saved:
             connection.execute("UPDATE site_settings SET config=? WHERE id=1", (json.dumps(merged, ensure_ascii=False),))
         connection.commit()
@@ -287,6 +318,10 @@ def public_row(row):
     return item
 
 
+def allowed_gallery_image(value):
+    return value.startswith("https://") or value in GALLERY_ASSETS or bool(re.fullmatch(r"/site-images/[a-f0-9]{32}\.(jpg|png|webp)", value))
+
+
 def validate_site_config(value, previous=None):
     if not isinstance(value, dict) or set(value) != set(DEFAULT_SITE):
         raise ValueError("Site ayarları eksik veya geçersiz.")
@@ -295,7 +330,7 @@ def validate_site_config(value, previous=None):
         raise ValueError("Metin alanları eksik veya geçersiz.")
     for key, text in content.items():
         content[key] = clean_text(text, 600, True)
-        if key.endswith("_image") and not (content[key].startswith("https://") or re.fullmatch(r"/site-images/[a-f0-9]{32}\.(jpg|png|webp)", content[key])):
+        if key.endswith("_image") and not allowed_gallery_image(content[key]):
             raise ValueError("Galeri görseli için HTTPS adresi veya yüklenmiş görsel kullanın.")
         if previous and re.fullmatch(r"step_[1-4]_title", key) and content[key] != previous["content"][key]:
             raise ValueError("Süreç adları değiştirilemez.")
@@ -309,7 +344,7 @@ def validate_site_config(value, previous=None):
             raise ValueError("Galeri öğesi eksik veya geçersiz.")
         for field in ("label", "title", "intro", "image"):
             item[field] = clean_text(item[field], 600, True)
-        if not (item["image"].startswith("https://") or re.fullmatch(r"/site-images/[a-f0-9]{32}\.(jpg|png|webp)", item["image"])):
+        if not allowed_gallery_image(item["image"]):
             raise ValueError("Galeri görseli yükleyin.")
         if previous and item["image"].startswith("https://") and item["image"] not in {entry["image"] for entry in previous["gallery"]}:
             raise ValueError("Yeni görseller yalnızca dosya yüklenerek değiştirilebilir.")
@@ -589,10 +624,16 @@ def guarded(method):
             if self.headers.get("Transfer-Encoding") or len(lengths) > 1:
                 raise ValueError("Geçersiz istek biçimi.")
             length = int(lengths[0]) if lengths else 0
-            limit = MAX_BODY if path in ("/api/requests", "/api/site-image") and self.command == "POST" else 256000
+            limit = MAX_BODY if path == "/api/requests" and self.command == "POST" else 256000
+            if path == "/api/site-image" and self.command == "POST":
+                limit = MAX_SITE_IMAGE_BODY
             if path.startswith("/api/chat/"):
                 limit = 32000
             if length < 0 or length > limit:
+                if path == "/api/requests" and self.command == "POST":
+                    self.close_connection = True
+                    self.error_json(413, "Fotoğrafların toplam boyutu en fazla 47 MB olabilir.")
+                    return
                 raise ValueError("İstek boyutu izin verilen sınırı aşıyor.")
             if admin_auth.is_admin_resource(path, self.command) and not admin_auth.authorized(self.headers):
                 self.close_connection = True
@@ -894,6 +935,9 @@ class Handler(BaseHTTPRequestHandler):
             "/chat-ui.css": (ROOT / "chat-ui.css", "text/css; charset=utf-8"),
             "/tracking-ui.css": (ROOT / "tracking-ui.css", "text/css; charset=utf-8"),
             "/hero-workshop-v2.png": (ROOT / "hero-workshop-v2.png", "image/png"),
+            "/assets/gallery/sneaker-restoration.webp": (ROOT / "assets/gallery/sneaker-restoration.webp", "image/webp"),
+            "/assets/gallery/leather-oxford-care.webp": (ROOT / "assets/gallery/leather-oxford-care.webp", "image/webp"),
+            "/assets/gallery/leather-bag-repair.webp": (ROOT / "assets/gallery/leather-bag-repair.webp", "image/webp"),
             "/ai-robot.svg": (ROOT / "ai-robot.svg", "image/svg+xml"),
             "/ai-logo.webp": (ROOT / "ai-logo.webp", "image/webp"),
             "/site.css": (ROOT / "site.css", "text/css; charset=utf-8"),
@@ -1112,7 +1156,11 @@ class Handler(BaseHTTPRequestHandler):
                 images = [part.get_payload(decode=True) for part in message.iter_parts() if part.get_param("name", header="content-disposition") == "image" and part.get_filename()]
                 if len(images) != 1:
                     raise ValueError("Tek bir görsel seçin.")
+                if len(images[0]) > MAX_PHOTO_SIZE:
+                    raise ValueError("Site görseli en fazla 5 MB olabilir.")
                 data, extension = validate_image(images[0])
+                if len(data) > MAX_PHOTO_SIZE:
+                    raise ValueError("İşlenen site görseli 5 MB sınırını aşıyor. Daha küçük bir görsel seçin.")
                 extension = "." + extension
                 filename = secrets.token_hex(16) + extension
                 (SITE_IMAGES / filename).write_bytes(data)
@@ -1162,6 +1210,8 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("Ürün veya hizmet seçenekleri değişmiş. Sayfayı yenileyip tekrar seçin.")
             if not 1 <= len(images) <= MAX_PHOTOS:
                 raise ValueError("Lütfen 1 ila 3 ayakkabı fotoğrafı seçin.")
+            if sum(map(len, images)) > MAX_CUSTOMER_PHOTOS_TOTAL:
+                raise ValueError("Fotoğrafların toplam boyutu en fazla 47 MB olabilir.")
             checked = []
             for data in images:
                 data, extension = validate_image(data)

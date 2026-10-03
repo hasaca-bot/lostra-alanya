@@ -22,7 +22,7 @@ Fotoğrafları güvenli biçimde işlemek için Pillow gerekir. İlk açılışt
 
 ## Akış
 
-1. Müşteri ad, telefon, marka/model, ürün türü, işlem seçimi ve 1–3 fotoğraf ile talep oluşturur. Fotoğraflar JPG, PNG veya WebP ve en fazla 5 MB olabilir. Sunucu görselin tamamını çözüp tekrar kodlar; EXIF ve konum verilerini siler. En çok 25 megapiksel ve 10.000 piksel kenar kabul edilir.
+1. Müşteri ad, telefon, marka/model, ürün türü, işlem seçimi ve 1–3 fotoğraf ile talep oluşturur. Fotoğraflar JPG, PNG veya WebP olabilir; fotoğraf başına 5 MB sınırı yoktur. Toplam fotoğraf boyutu en fazla 47 MB, HTTP isteği en fazla 48 MB olabilir. Sunucu görselin tamamını çözüp tekrar kodlar; EXIF ve konum verilerini siler. En çok 25 megapiksel ve 10.000 piksel kenar kabul edilir.
 2. Sunucu rastgele `LA-XXXX-XXXX` takip kodu oluşturur ve kaydı `Yeni` durumuyla saklar.
 3. Yönetim paneli talepleri `Yeni`, `İnceleniyor`, `Hazırlanıyor`, `Tamamlandı`, `Gönderildi`, `Teslim Edildi` sütunlarında gösterir. Her talep kartındaki düğme durumu tek tıklamayla sıradaki aşamaya taşır; son aşamada düğme görünmez. Müşteri/ürün detayları, fotoğraflar, model ve iç not görülebilir; durum, model ve iç not ayrıca detay ekranından değiştirilebilir.
 4. Müşteri takip koduyla sorguladığında güncel durum ve SVG simgeli ilerleme çubuğu görünür. Talep `Teslim Edildi` durumuna geçtikten sonra yönetici yorum izni açarsa müşteri koduyla bir kez puan ve yorum gönderebilir; adını gizleyebilir.

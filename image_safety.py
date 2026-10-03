@@ -4,7 +4,9 @@ from io import BytesIO
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 
-MAX_IMAGE_BYTES = 5 * 1024 * 1024
+# The HTTP request limits encoded input as a whole. Re-encoding can expand a
+# compressed image, so bound the stored result separately.
+MAX_STORED_IMAGE_BYTES = 48 * 1024 * 1024
 MAX_IMAGE_PIXELS = 25_000_000
 MAX_IMAGE_DIMENSION = 10_000
 FORMATS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
@@ -17,14 +19,12 @@ class _ImageLimitError(ValueError):
 def validate_image(data: bytes) -> tuple[bytes, str]:
     """Return (sanitized image bytes, extension); reject unsafe/invalid uploads.
 
-    Both encoded sizes and decoded dimensions are bounded. Re-encoding removes
+    The stored encoding and decoded dimensions are bounded. Re-encoding removes
     EXIF/GPS, comments, embedded thumbnails and appended data. Orientation is
     applied to pixels before metadata is discarded. No filesystem is touched.
     """
     if not isinstance(data, bytes) or not data:
         raise ValueError("Geçerli bir JPG, PNG veya WebP görseli seçin.")
-    if len(data) > MAX_IMAGE_BYTES:
-        raise ValueError("Her görsel en fazla 5 MB olabilir.")
     try:
         with Image.open(BytesIO(data), formats=list(FORMATS)) as probe:
             image_format = probe.format
@@ -62,6 +62,6 @@ def validate_image(data: bytes) -> tuple[bytes, str]:
     except (UnidentifiedImageError, OSError, SyntaxError, EOFError, KeyError, ValueError,
             TypeError, Image.DecompressionBombError) as exc:
         raise ValueError("Görsel okunamadı veya dosya bozuk. Geçerli bir JPG, PNG veya WebP seçin.") from exc
-    if len(result) > MAX_IMAGE_BYTES:
-        raise ValueError("İşlenen görsel 5 MB sınırını aşıyor. Daha küçük bir görsel seçin.")
+    if len(result) > MAX_STORED_IMAGE_BYTES:
+        raise ValueError("İşlenen görsel depolama sınırını aşıyor. Daha düşük çözünürlüklü bir görsel seçin.")
     return result, FORMATS[image_format]

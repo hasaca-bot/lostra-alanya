@@ -171,13 +171,24 @@ scheduleActiveSection();
 
 const photoInput = $('#photos');
 const photoFeedback = $('#photo-feedback');
+const photoHint = '1 ila 3 JPG, PNG veya WebP fotoğrafı. Toplam dosya boyutu en fazla 47 MB.';
+const maxPhotoTotalBytes = 47 * 1024 * 1024;
+function photoValidationMessage(files) {
+  if (files.length < 1 || files.length > 3 || files.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
+    return '1 ila 3 JPG, PNG veya WebP fotoğrafı seçin.';
+  }
+  if (files.reduce((sum, file) => sum + file.size, 0) > maxPhotoTotalBytes) {
+    return 'Fotoğrafların toplam boyutu en fazla 47 MB olabilir.';
+  }
+  return '';
+}
 let photoUrls = [];
 function clearPhotoPreview() { photoUrls.forEach(url => URL.revokeObjectURL(url)); photoUrls = []; $('#photo-preview').replaceChildren(); }
 photoInput?.addEventListener('change', () => {
   const files = [...photoInput.files];
   const preview = $('#photo-preview');
   clearPhotoPreview();
-  photoFeedback.textContent = files.length ? `${files.length} fotoğraf seçildi.` : '1 ila 3 JPG, PNG veya WebP fotoğrafı; her biri en fazla 5 MB.';
+  photoFeedback.textContent = files.length ? photoValidationMessage(files) || `${files.length} fotoğraf seçildi.` : photoHint;
   files.slice(0, 3).forEach((file) => {
     const image = document.createElement('img');
     image.alt = file.name;
@@ -202,8 +213,9 @@ if (photoInput && photoDropzone) {
     event.preventDefault();
     photoDropzone.classList.remove('is-dragging');
     const files = [...(event.dataTransfer?.files || [])];
-    if (files.length < 1 || files.length > 3 || files.some(file => file.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
-      photoFeedback.textContent = '1 ila 3 JPG, PNG veya WebP fotoğrafı bırakın. Her biri en fazla 5 MB olabilir.';
+    const validationMessage = photoValidationMessage(files);
+    if (validationMessage) {
+      photoFeedback.textContent = validationMessage;
       return;
     }
     const transfer = new DataTransfer();
@@ -221,8 +233,9 @@ quoteForm?.addEventListener('submit', async (event) => {
   const error = $('#form-error');
   error.classList.add('hidden');
   const files = [...photoInput.files];
-  if (files.length < 1 || files.length > 3 || files.some((file) => file.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
-    error.textContent = '1 ila 3 JPG, PNG veya WebP fotoğrafı seçin. Her biri en fazla 5 MB olabilir.';
+  const validationMessage = photoValidationMessage(files);
+  if (validationMessage) {
+    error.textContent = validationMessage;
     error.classList.remove('hidden');
     error.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
@@ -242,7 +255,7 @@ quoteForm?.addEventListener('submit', async (event) => {
     $('#form-success').scrollIntoView({ behavior: 'smooth', block: 'center' });
     quoteForm.reset();
     clearPhotoPreview();
-    photoFeedback.textContent = '1 ila 3 JPG, PNG veya WebP fotoğrafı; her biri en fazla 5 MB.';
+    photoFeedback.textContent = photoHint;
   } catch (cause) {
     error.textContent = cause.message;
     error.classList.remove('hidden');

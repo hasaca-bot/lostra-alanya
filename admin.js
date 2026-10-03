@@ -1,6 +1,7 @@
 const statuses = ['Yeni', 'İnceleniyor', 'Hazırlanıyor', 'Tamamlandı', 'Gönderildi', 'Teslim Edildi'];
 const el = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
 const iconSvg = (path) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+const whatsappSvg = () => iconSvg('<path d="M12 2.5a9.5 9.5 0 0 0-8.15 14.39L2.5 21.5l4.73-1.24A9.5 9.5 0 1 0 12 2.5Z"/><path d="M8.55 7.7c-.35-.3-.85-.2-1.13.1-.42.45-.62 1.02-.56 1.58.34 3.22 3.2 6.08 6.42 6.42.56.06 1.13-.14 1.58-.56.3-.28.4-.78.1-1.13l-1.05-1.2c-.19-.22-.5-.29-.76-.15l-.9.48a7 7 0 0 1-2.48-2.48l.48-.9c.14-.26.07-.57-.15-.76Z" stroke-width="1.6"/>');
 const $ = (selector) => document.querySelector(selector);
 let requests = [];
 let selectedId = null;
@@ -23,6 +24,11 @@ $('#live-status').setAttribute('role', 'status');
 function render() {
   const query = $('#search').value.trim().toLocaleLowerCase('tr-TR');
   const board = $('#board');
+  const shown = requests.filter((item) => (!activeStatus || item.status === activeStatus) && `${item.name} ${item.model} ${item.code} ${item.phone}`.toLocaleLowerCase('tr-TR').includes(query));
+  $('#dashboard-view .intro h1').textContent = activeStatus || 'Talep Panosu';
+  $('#dashboard-view .intro p').textContent = activeStatus ? `${activeStatus} aşamasındaki talepleri inceleyin ve güncelleyin.` : 'Yeni istekleri inceleyin, fotoğraflara bakın ve aşamaları güncelleyin.';
+  const summary = $('#board-summary');
+  if (summary) summary.textContent = query ? `${shown.length} eşleşen talep` : activeStatus ? `${shown.length} talep` : `${requests.length} toplam talep · ${requests.filter((item) => item.status === 'Yeni').length} yeni`;
   board.replaceChildren();
   board.classList.toggle('single', Boolean(activeStatus));
   statuses.forEach((status) => {
@@ -68,7 +74,7 @@ function render() {
         const contact = el('button', 'request-contact');
         contact.type = 'button';
         contact.setAttribute('aria-label', `${item.code}: WhatsApp mesaj taslağını aç`);
-        contact.innerHTML = iconSvg('<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.6 8.6 0 0 1-4-.98L3 21l2-5.2a8.5 8.5 0 1 1 16-4.3Z"/><path d="M8.5 10.5a6 6 0 0 0 5 5"/>');
+        contact.innerHTML = whatsappSvg();
         contact.append(el('span', '', 'Müşteriye mesaj hazırla'));
         contact.addEventListener('click', () => openCompletionDraft(item.id, contact));
         cardGroup.append(contact);
@@ -226,7 +232,7 @@ function showDetail(id) {
     const contactSection = el('section', 'detail-section contact-section');
     contactSection.append(el('h3', '', 'Müşteriye haber ver'), el('p', '', 'İşlem tamamlandı. Taslak müşteri numarası için hazırlanır; gönderme işlemini siz yaparsınız.'));
     const contact = el('button', 'contact-customer'); contact.type = 'button';
-    contact.innerHTML = iconSvg('<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.6 8.6 0 0 1-4-.98L3 21l2-5.2a8.5 8.5 0 1 1 16-4.3Z"/><path d="M8.5 10.5a6 6 0 0 0 5 5"/>');
+    contact.innerHTML = whatsappSvg();
     contact.append(el('span', '', 'WhatsApp taslağını aç'));
     const feedback = el('p', 'contact-feedback'); feedback.setAttribute('role', 'status');
     contact.addEventListener('click', () => openCompletionDraft(item.id, contact, feedback));
@@ -289,6 +295,8 @@ const settingsStyle = el('link'); settingsStyle.rel = 'stylesheet'; settingsStyl
 const main = document.querySelector('main');
 const dashboardView = el('section'); dashboardView.id = 'dashboard-view';
 while (main.firstChild) dashboardView.append(main.firstChild);
+const boardSummary = el('p', 'board-summary'); boardSummary.id = 'board-summary'; boardSummary.setAttribute('aria-live', 'polite');
+dashboardView.querySelector('#board').before(boardSummary);
 const settingsView = el('section'); settingsView.id = 'settings-view'; settingsView.hidden = true;
 const reviewsView = el('section', 'admin-extra-view'); reviewsView.id = 'reviews-view'; reviewsView.hidden = true;
 const analyticsView = el('section', 'admin-extra-view'); analyticsView.id = 'analytics-view'; analyticsView.hidden = true;

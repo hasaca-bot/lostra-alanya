@@ -52,11 +52,28 @@
   let submitting = false;
   let previousFocus = null;
   let modalSiblings = [];
+  let followLatest = true;
+  let openFrame = 0;
   panel.id = 'lostra-chat-panel'; launcher.setAttribute('aria-controls', panel.id);
-  function bubble(text, sender) { const item = document.createElement('p'); item.className = `chat-message chat-${sender}`; item.textContent = text; if (admin) panel.classList.add('has-messages'); stream.append(item); stream.scrollTop = stream.scrollHeight; return item; }
+  function scrollToLatest(force = false) { if (force || followLatest) stream.scrollTop = stream.scrollHeight; }
+  stream.addEventListener('scroll', () => { followLatest = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 72; });
+  function bubble(text, sender) { const item = document.createElement('p'); item.className = `chat-message chat-${sender}`; item.textContent = text; if (admin) panel.classList.add('has-messages'); stream.append(item); scrollToLatest(true); return item; }
+  function fitAdminViewport() {
+    if (!admin) return;
+    const viewport = window.visualViewport;
+    panel.style.setProperty('--chat-visible-height', `${Math.round(viewport?.height ?? window.innerHeight)}px`);
+    panel.style.setProperty('--chat-visible-top', `${Math.round(viewport?.offsetTop ?? 0)}px`);
+  }
+  if (admin) {
+    window.visualViewport?.addEventListener('resize', fitAdminViewport);
+    window.visualViewport?.addEventListener('scroll', fitAdminViewport);
+    window.addEventListener('resize', fitAdminViewport);
+    fitAdminViewport();
+  }
   let closeTimer;
   function toggle(open) {
     clearTimeout(closeTimer);
+    cancelAnimationFrame(openFrame);
     launcher.setAttribute('aria-expanded', String(open));
     launcher.setAttribute('aria-label', open ? 'Sohbeti kapat' : admin ? 'Yönetici asistanını aç' : 'Müşteri asistanını aç');
     if (admin) {
@@ -64,10 +81,11 @@
         previousFocus = document.activeElement;
         modalSiblings = [...document.body.children].filter(node => node !== root && !node.inert);
         modalSiblings.forEach(node => { node.inert = true; });
+        fitAdminViewport();
         panel.hidden = false;
         root.classList.add('chat-open');
         document.body.classList.add('admin-chat-open');
-        requestAnimationFrame(() => panel.classList.add('is-open'));
+        openFrame = requestAnimationFrame(() => panel.classList.add('is-open'));
         input.focus();
       } else {
         panel.classList.remove('is-open');
@@ -105,7 +123,7 @@
     let ticker = null; let wakeDrain = null; let fullReply = ''; let gotDone = false; let changed = false;
     function showLetters() {
       if (!letters.length) { clearInterval(ticker); ticker = null; if (wakeDrain) { wakeDrain(); wakeDrain = null; } return; }
-      pending.textContent += letters.shift(); stream.scrollTop = stream.scrollHeight;
+      pending.textContent += letters.shift(); scrollToLatest();
     }
     function append(textPart) {
       if (!textPart) return;
@@ -152,6 +170,6 @@
       if (ticker) { clearInterval(ticker); ticker = null; }
       pending.textContent = error.name === 'AbortError' ? 'Yanıt zaman aşımına uğradı. Lütfen yeniden deneyin.' : error.message; pending.classList.remove('chat-pending'); pending.classList.add('chat-error'); messages.pop();
       if (admin && changed && typeof load === 'function') load();
-    } finally { clearTimeout(timeout); if (reader) { try { await reader.cancel(); } catch { /* The stream may already be closed. */ } } submitting = false; stream.setAttribute('aria-busy', 'false'); send.disabled = false; input.disabled = false; if (launcher.getAttribute('aria-expanded') === 'true') input.focus(); stream.scrollTop = stream.scrollHeight; }
+    } finally { clearTimeout(timeout); if (reader) { try { await reader.cancel(); } catch { /* The stream may already be closed. */ } } submitting = false; stream.setAttribute('aria-busy', 'false'); send.disabled = false; input.disabled = false; if (launcher.getAttribute('aria-expanded') === 'true') input.focus(); scrollToLatest(); }
   });
 })();
