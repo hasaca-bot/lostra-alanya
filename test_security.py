@@ -103,6 +103,14 @@ class SecurityTests(unittest.TestCase):
         with patch.object(app, "db_connect", side_effect=AssertionError("Session check must not open DB")):
             self.assertEqual(self.call("/api/revision")[0], 200)
 
+    def test_eight_character_password_is_accepted(self):
+        data = json.dumps({"password": "12345678"}).encode()
+        headers = {"Content-Type": "application/json"}
+        with patch.dict(os.environ, {"LOSTRA_ADMIN_PASSWORD": "12345678"}):
+            self.assertEqual(self.call("/api/admin/login", "POST", data, headers, auth=False)[0], 200)
+        with patch.dict(os.environ, {"LOSTRA_ADMIN_PASSWORD": "1234567"}):
+            self.assertEqual(self.call("/api/admin/login", "POST", data, headers, auth=False)[0], 503)
+
     def test_health_check_does_not_open_database(self):
         with patch.object(app, "db_connect", side_effect=AssertionError("Health check must not open DB")):
             self.assertEqual(self.call("/health", auth=False)[0], 200)

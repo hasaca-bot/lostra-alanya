@@ -45,7 +45,7 @@ Formdaki **Advanced → Environment Variables** bölümünü açın. İki satır
 
 | Key kutusu | Value kutusu |
 | --- | --- |
-| `LOSTRA_ADMIN_PASSWORD` | Site sahibinin belirlediği **en az 16 karakterlik benzersiz yönetici şifresi** |
+| `LOSTRA_ADMIN_PASSWORD` | Site sahibinin belirlediği **en az 8 karakterlik benzersiz yönetici şifresi** |
 | `LOSTRA_DATA_DIR` | `/var/data` |
 
 Şifreyi GitHub'a veya rehber dosyasına yazmayın. Site sahibi isterse bu kutuya şifreyi kurulumu yaparken kendisi girebilir. **Şifre boşsa yönetici paneli açılmaz.** `PORT`, `RENDER`, `DATABASE_URL` ve Gemini için başka satır eklemeyin. Gemini anahtarı daha sonra yönetici panelindeki **Site Yapılandırması → Gemini bağlantısı** bölümüne girilir.

@@ -19,7 +19,7 @@
 
 ## Doğrulama
 
-- `python -m unittest discover -p "test_*.py" -q`: yönetici oturumu dahil 30 test geçti.
+- `python -m unittest discover -p "test_*.py" -q`: yönetici oturumu dahil 31 test geçti.
 - `node --check app.js`, `admin.js`, `chat-ui.js`; `python -m py_compile` ve `git diff --check`: geçti.
 - Gerçek tarayıcıda müşteri ana sayfası, takip sonucu, yönetici panosu, açılıp kapanan menü, karanlık mod, tam ekran asistan ve ayarlar açıldı. Yeni talep başka bir istekte oluşturulunca panelde yenilemeden belirdi; aşama düğmesi ve takip çubuğu doğrulandı. Tarayıcı konsolunda hata görülmedi.
 - Bu oturumda tarayıcıya mobil görünüm boyutu verilmesi desteklenmediği için gerçek mobil görsel kontrolü tamamlanmadı. Mevcut CSS kırılma noktaları koddan gözden geçirildi.

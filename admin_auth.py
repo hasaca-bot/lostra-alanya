@@ -20,7 +20,7 @@ _lock = threading.Lock()
 
 
 def password_configured() -> bool:
-    return len(os.environ.get("LOSTRA_ADMIN_PASSWORD", "")) >= 16
+    return len(os.environ.get("LOSTRA_ADMIN_PASSWORD", "")) >= 8
 
 
 def check_password(candidate: object) -> bool:
