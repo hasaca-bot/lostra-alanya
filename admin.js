@@ -172,8 +172,16 @@ async function load() {
         render();
         if (newCount) $('#live-status').textContent = `${newCount} yeni talep geldi`;
       } catch (error) {
-        $('#notice').textContent = `${error.message} Yenile düğmesiyle tekrar deneyin.`;
+        const connectionFailed = error instanceof TypeError;
+        $('#notice').textContent = connectionFailed
+          ? 'Sunucuya bağlanılamadı. Yerel sunucunun çalıştığını kontrol edin, ardından Yenile düğmesine basın.'
+          : `${error.message} Yenile düğmesiyle tekrar deneyin.`;
         $('#notice').hidden = false;
+        if (!requestsLoaded) {
+          const summary = $('#board-summary');
+          if (summary) summary.textContent = 'Talepler yüklenemedi';
+          $('#board').replaceChildren();
+        }
       }
     } while (reloadPending);
   } finally { busy = false; }
