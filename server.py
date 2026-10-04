@@ -539,6 +539,8 @@ def chat_context(kind, messages):
     finally:
         connection.close()
     if not api_key:
+        if kind == "customer":
+            raise ValueError("Asistan şu anda kullanılamıyor. Teklif formundan talep oluşturabilir veya takip kodunuzla durumunuzu sorgulayabilirsiniz.")
         raise ValueError("Yapay zekâ henüz etkin değil. Yönetici panelindeki Gemini ayarından API anahtarı ekleyin.")
     site_context = json.dumps({"content": {key: value for key, value in site["content"].items() if not key.endswith("_image")}, "product_types": site["product_types"], "services": site["services"]}, ensure_ascii=False)
     if kind == "customer":

@@ -59,7 +59,10 @@ class FlowTests(unittest.TestCase):
 
     def test_ai_key_is_private_and_admin_tool_updates_request(self):
         json_body = lambda value: json.dumps(value, ensure_ascii=False).encode()
-        self.assertEqual(self.call("/api/chat/customer", "POST", json_body({"messages": [{"role": "user", "text": "Merhaba"}]}), "application/json")[0], 400)
+        status, unavailable = self.call("/api/chat/customer", "POST", json_body({"messages": [{"role": "user", "text": "Merhaba"}]}), "application/json")
+        self.assertEqual(status, 400)
+        self.assertIn("Asistan şu anda kullanılamıyor", unavailable["error"])
+        self.assertNotIn("Yönetici", unavailable["error"])
         self.assertNotIn("api_key", self.call("/api/site")[1])
         status, setting = self.call("/api/admin/ai-settings", "PATCH", json_body({"api_key": "temporary-test-key"}), "application/json")
         self.assertEqual((status, setting["configured"]), (200, True))
